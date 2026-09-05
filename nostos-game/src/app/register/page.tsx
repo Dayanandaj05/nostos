@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { registerTeam, RegisterState } from "@/app/actions/registerTeam";
 import { Anchor } from "lucide-react";
+import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState<RegisterState, FormData>(registerTeam, { success: false });
@@ -50,11 +51,13 @@ export default function RegisterPage() {
 
   if (state.success) {
     return (
-      <main className="min-h-screen text-parchment font-serif bg-ink flex flex-col items-center justify-center p-6 selection:bg-gold selection:text-ink">
-        {/* Subtle noise overlay */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay"
-             style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
-        
+      <main className="min-h-screen text-parchment font-serif bg-ink flex flex-col items-center justify-center p-6 selection:bg-gold selection:text-ink relative overflow-hidden">
+        {/* Subtle Ocean Canvas Background */}
+        <div className="fixed inset-0 opacity-40 pointer-events-none z-0">
+          <OceanCanvas />
+        </div>
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.7)_0%,rgba(15,23,37,0.92)_70%,rgba(10,16,25,0.98)_100%)] pointer-events-none z-0" />
+
         <div className="max-w-2xl text-center space-y-12 relative z-10">
           <Anchor className="w-24 h-24 text-gold mx-auto animate-pulse" />
           <h1 className="text-4xl md:text-6xl text-gold tracking-widest uppercase">Vessel Recorded</h1>
@@ -72,11 +75,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen text-parchment font-serif bg-ink selection:bg-gold selection:text-ink flex flex-col items-center justify-center p-6 md:p-12">
-      {/* Background elements */}
-      <div className="fixed inset-0 bg-gradient-to-br from-ink via-ink to-[#151c22] z-0" />
-      <div className="fixed inset-0 opacity-10 pointer-events-none mix-blend-overlay z-0"
-           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+    <main className="min-h-screen text-parchment font-serif bg-ink selection:bg-gold selection:text-ink flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
+      {/* Less Intense Animated Ocean Canvas Background */}
+      <div className="fixed inset-0 opacity-40 pointer-events-none z-0">
+        <OceanCanvas />
+      </div>
+      
+      {/* Dark Atmospheric Overlay for Legibility & Form Focus */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.65)_0%,rgba(15,23,37,0.88)_70%,rgba(10,16,25,0.96)_100%)] pointer-events-none z-0" />
       
       <div className="relative z-10 w-full max-w-xl">
         <div className="text-center mb-16 space-y-6">
