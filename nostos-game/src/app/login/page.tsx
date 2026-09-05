@@ -7,6 +7,16 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { loginTeam, loginAdmin, quickLoginTestTeam, quickLoginAdmin } from "@/app/actions/auth";
+import { OceanCanvas } from "@/components/ui/OceanCanvas";
+
+const GreekKeyLine = () => (
+  <svg width="100%" height="16" viewBox="0 0 600 16" preserveAspectRatio="xMidYMid slice" className="text-gold/40 my-4">
+    <pattern id="gk-log" x="0" y="0" width="30" height="16" patternUnits="userSpaceOnUse">
+      <path d="M0,14 L8,14 L8,3 L22,3 L22,14 L30,14 L30,8 L14,8 L14,11 L25,11 L25,6 L5,6 L5,16" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </pattern>
+    <rect x="0" y="0" width="100%" height="16" fill="url(#gk-log)" />
+  </svg>
+);
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"crew" | "coordinator">("crew");
@@ -15,51 +25,87 @@ export default function LoginPage() {
   const [adminState, adminFormAction, isAdminPending] = useActionState(loginAdmin, { success: false });
 
   return (
-    <main className="min-h-screen text-parchment font-serif bg-ink selection:bg-gold selection:text-ink flex flex-col items-center justify-center p-6 md:p-12 relative">
+    <main className="min-h-screen text-parchment font-serif bg-ink selection:bg-gold selection:text-ink flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden py-16">
       
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0A1017] via-ink to-ink z-0" />
-      <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay z-0"
-           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+      {/* Less Intense Animated Ocean Canvas Background */}
+      <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
+        <OceanCanvas />
+      </div>
       
-      <div className="relative z-10 w-full max-w-md">
+      {/* Dark Atmospheric Overlay for Legibility & Form Focus */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
+      
+      <div className="relative z-10 w-full max-w-lg">
         
-        <div className="text-center mb-12 space-y-4">
-          <h1 className="text-5xl md:text-6xl text-gold tracking-widest uppercase font-normal">Return</h1>
-          <p className="text-xl text-parchment/60 italic">The sea remembers those who sail it.</p>
+        {/* Odyssey Header Banner */}
+        <div className="text-center mb-10 space-y-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-gold/30 bg-gold/10 text-gold text-xs uppercase tracking-widest mb-1 font-serif">
+            ⚓ Return to the Odyssey • NOSTOS
+          </div>
+          <h1 className="text-5xl md:text-7xl text-gold tracking-widest uppercase font-normal drop-shadow-[0_4px_25px_rgba(201,162,75,0.3)]">
+            Return
+          </h1>
+          <p className="text-lg text-parchment/80 italic max-w-md mx-auto leading-relaxed">
+            “The sea remembers those who sail it.”
+          </p>
+          <div className="max-w-xs mx-auto">
+            <GreekKeyLine />
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-parchment/20 mb-8">
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-gold/30 mb-8 bg-[#0B121E]/80 rounded-t-2xl p-1">
           <button 
-            className={`flex-1 pb-4 tracking-widest uppercase text-sm font-bold transition-colors ${activeTab === "crew" ? "text-gold border-b-2 border-gold" : "text-parchment/40 hover:text-parchment/80"}`}
+            className={`flex-1 py-3 px-4 tracking-widest uppercase text-xs font-bold transition-all rounded-xl flex items-center justify-center gap-2 ${
+              activeTab === "crew" 
+                ? "bg-gold/20 text-gold border border-gold/40 shadow-[0_0_15px_rgba(201,162,75,0.2)]" 
+                : "text-parchment/50 hover:text-parchment/90"
+            }`}
             onClick={() => setActiveTab("crew")}
           >
-            Crew
+            <span>⛵</span> Crew Captain & Sailors
           </button>
           <button 
-            className={`flex-1 pb-4 tracking-widest uppercase text-sm font-bold transition-colors ${activeTab === "coordinator" ? "text-gold border-b-2 border-gold" : "text-parchment/40 hover:text-parchment/80"}`}
+            className={`flex-1 py-3 px-4 tracking-widest uppercase text-xs font-bold transition-all rounded-xl flex items-center justify-center gap-2 ${
+              activeTab === "coordinator" 
+                ? "bg-gold/20 text-gold border border-gold/40 shadow-[0_0_15px_rgba(201,162,75,0.2)]" 
+                : "text-parchment/50 hover:text-parchment/90"
+            }`}
             onClick={() => setActiveTab("coordinator")}
           >
-            Coordinator
+            <span>🛡️</span> Event Directors & Proctors
           </button>
         </div>
 
-        <Card className="bg-ink/40 border border-wave/20 p-8 md:p-10 shadow-2xl backdrop-blur-md">
+        <Card className="bg-[#0B121E]/95 border border-gold/30 p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-3xl relative overflow-visible">
+          {/* Decorative Corner Ornaments */}
+          <div className="absolute -top-3 -left-3 w-5 h-5 border-t-2 border-l-2 border-gold/70" />
+          <div className="absolute -top-3 -right-3 w-5 h-5 border-t-2 border-r-2 border-gold/70" />
+          <div className="absolute -bottom-3 -left-3 w-5 h-5 border-b-2 border-l-2 border-gold/70" />
+          <div className="absolute -bottom-3 -right-3 w-5 h-5 border-b-2 border-r-2 border-gold/70" />
+
           {activeTab === "crew" ? (
             <form action={teamFormAction} className="space-y-8">
               {teamState.error && <ErrorBanner message={teamState.error} />}
               
               <div className="space-y-2">
-                <label className="text-parchment/60 uppercase tracking-widest text-sm block">Ship Name</label>
-                <Input name="ship_name" placeholder="The Argo" />
+                <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block flex justify-between">
+                  <span>Vessel Name (Ship Title)</span>
+                  <span className="text-gold/50 italic font-normal">Declared Manifest</span>
+                </label>
+                <Input name="ship_name" placeholder="e.g. The Argo, Ithaca's Pride" />
               </div>
+
               <div className="space-y-2">
-                <label className="text-parchment/60 uppercase tracking-widest text-sm block">Password</label>
+                <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block flex justify-between">
+                  <span>Secret Crew Cipher (Shared Password)</span>
+                  <span className="text-gold/50 italic font-normal">Crew Key</span>
+                </label>
                 <Input name="password" type="password" placeholder="••••••••" />
               </div>
-              <Button type="submit" className="w-full py-4 text-xl" disabled={isTeamPending}>
-                {isTeamPending ? "Consulting Logs..." : "Embark"}
+
+              <Button type="submit" className="w-full py-4 text-xl tracking-widest uppercase shadow-[0_0_30px_rgba(201,162,75,0.3)]" disabled={isTeamPending}>
+                {isTeamPending ? "Consulting Sacred Logs..." : "Embark Upon The Voyage →"}
               </Button>
             </form>
           ) : (
@@ -67,15 +113,21 @@ export default function LoginPage() {
               {adminState.error && <ErrorBanner message={adminState.error} />}
               
               <div className="space-y-2">
-                <label className="text-parchment/60 uppercase tracking-widest text-sm block">Username</label>
-                <Input name="username" placeholder="Coordinator ID" />
+                <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block">
+                  Coordinator Identifier (Director ID)
+                </label>
+                <Input name="username" placeholder="Director / Proctor ID" />
               </div>
+
               <div className="space-y-2">
-                <label className="text-parchment/60 uppercase tracking-widest text-sm block">Password</label>
+                <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block">
+                  Master Key Passcode
+                </label>
                 <Input name="password" type="password" placeholder="••••••••" />
               </div>
-              <Button type="submit" variant="secondary" className="w-full py-4 text-xl border border-gold/30" disabled={isAdminPending}>
-                {isAdminPending ? "Authenticating..." : "Access Control"}
+
+              <Button type="submit" variant="secondary" className="w-full py-4 text-xl tracking-widest uppercase border border-gold/40 shadow-[0_0_30px_rgba(201,162,75,0.2)]" disabled={isAdminPending}>
+                {isAdminPending ? "Verifying Credentials..." : "Unlock Control Panel →"}
               </Button>
             </form>
           )}
@@ -83,22 +135,22 @@ export default function LoginPage() {
 
         {/* Development Quick-Logins */}
         {process.env.NODE_ENV !== "production" && (
-          <div className="mt-12 p-6 border border-dashed border-danger/40 bg-danger/5 space-y-4">
-            <p className="text-danger/80 text-xs tracking-widest uppercase font-bold text-center">Development Shortcuts (Removed in Prod)</p>
-            <div className="flex gap-4">
+          <div className="mt-10 p-5 border border-dashed border-gold/30 bg-gold/5 rounded-2xl space-y-3">
+            <p className="text-gold/80 text-[11px] tracking-widest uppercase font-bold text-center">⚡ Development Quick-Access Shortcuts</p>
+            <div className="flex gap-3">
               <form action={quickLoginTestTeam} className="flex-1">
-                <Button variant="outline" className="w-full text-xs py-2 border-danger/30 text-danger/80 hover:bg-danger/10">Test Team</Button>
+                <Button variant="outline" className="w-full text-xs py-2 border-gold/30 text-gold hover:bg-gold/10">Quick Test Team</Button>
               </form>
               <form action={quickLoginAdmin} className="flex-1">
-                <Button variant="outline" className="w-full text-xs py-2 border-danger/30 text-danger/80 hover:bg-danger/10">Test Admin</Button>
+                <Button variant="outline" className="w-full text-xs py-2 border-gold/30 text-gold hover:bg-gold/10">Quick Test Admin</Button>
               </form>
             </div>
           </div>
         )}
 
-        <div className="mt-12 text-center">
-          <Link href="/register" className="text-parchment/40 hover:text-gold italic text-sm tracking-widest uppercase transition-colors">
-            A new vessel? Register here.
+        <div className="mt-10 text-center">
+          <Link href="/register" className="text-parchment/50 hover:text-gold italic text-sm tracking-widest uppercase transition-colors">
+            A new vessel? Register your crew here →
           </Link>
         </div>
       </div>

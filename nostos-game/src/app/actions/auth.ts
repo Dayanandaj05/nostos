@@ -97,29 +97,35 @@ export async function quickLoginTestTeam() {
     throw new Error("Not allowed in production");
   }
 
-  // Find or create a test team
-  let { data: team } = await supabase
-    .from("teams")
-    .select("id, password_hash")
-    .eq("ship_name", "Test Argo")
-    .maybeSingle();
+  let teamId = "dev-test-argo-id";
 
-  if (!team) {
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash("testpassword", salt);
-    const { data: newTeam } = await supabase
+  try {
+    let { data: team } = await supabase
       .from("teams")
-      .insert([{ ship_name: "Test Argo", password_hash, member_names: ["Tester 1", "Tester 2", "Tester 3"] }])
       .select("id, password_hash")
-      .single();
-    team = newTeam;
+      .eq("ship_name", "Test Argo")
+      .maybeSingle();
+
+    if (!team) {
+      const salt = await bcrypt.genSalt(10);
+      const password_hash = await bcrypt.hash("testpassword", salt);
+      const { data: newTeam } = await supabase
+        .from("teams")
+        .insert([{ ship_name: "Test Argo", password_hash, member_names: ["Tester 1", "Tester 2", "Tester 3"] }])
+        .select("id, password_hash")
+        .single();
+      team = newTeam;
+    }
+
+    if (team?.id) {
+      teamId = team.id;
+    }
+  } catch (err) {
+    console.warn("Supabase local/remote connection unavailable, using fallback dev session for Test Argo:", err);
   }
 
-  if (team) {
-    await createSession({ role: "team", id: team.id, ship_name: "Test Argo" });
-    await ensureDeviceToken();
-  }
-  
+  await createSession({ role: "team", id: teamId, ship_name: "Test Argo" });
+  await ensureDeviceToken();
   redirect("/play");
 }
 
@@ -128,26 +134,33 @@ export async function quickLoginAdmin() {
     throw new Error("Not allowed in production");
   }
 
-  let { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("username", "testadmin")
-    .maybeSingle();
+  let adminId = "dev-test-admin-id";
 
-  if (!admin) {
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash("adminpass", salt);
-    const { data: newAdmin } = await supabase
+  try {
+    let { data: admin } = await supabase
       .from("admins")
-      .insert([{ username: "testadmin", password_hash, role: "admin" }])
       .select("id")
-      .single();
-    admin = newAdmin;
+      .eq("username", "testadmin")
+      .maybeSingle();
+
+    if (!admin) {
+      const salt = await bcrypt.genSalt(10);
+      const password_hash = await bcrypt.hash("adminpass", salt);
+      const { data: newAdmin } = await supabase
+        .from("admins")
+        .insert([{ username: "testadmin", password_hash, role: "admin" }])
+        .select("id")
+        .single();
+      admin = newAdmin;
+    }
+
+    if (admin?.id) {
+      adminId = admin.id;
+    }
+  } catch (err) {
+    console.warn("Supabase local/remote connection unavailable, using fallback dev session for Admin:", err);
   }
 
-  if (admin) {
-    await createSession({ role: "admin", id: admin.id, username: "testadmin" });
-  }
-
+  await createSession({ role: "admin", id: adminId, username: "testadmin" });
   redirect("/admin");
 }

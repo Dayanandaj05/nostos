@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { addIncidentLog } from "@/app/actions/adminActions";
 import { Flag, ShieldCheck } from "lucide-react";
+import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 export function VolunteerClient({ teams, currentUsername }: any) {
   const [flaggingTeamId, setFlaggingTeamId] = useState<string | null>(null);
@@ -15,16 +16,23 @@ export function VolunteerClient({ teams, currentUsername }: any) {
   };
 
   return (
-    <div className="min-h-screen bg-ink text-parchment p-8">
-      <header className="flex justify-between items-end mb-8 border-b border-gold/20 pb-4">
-        <div>
-          <h1 className="text-4xl font-serif text-gold uppercase tracking-widest flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8" />
-            Volunteer Watch
-          </h1>
-          <p className="text-parchment/60 font-mono text-sm mt-2">Logged in as {currentUsername}</p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-ink text-parchment p-8 relative overflow-hidden">
+      {/* Less Intense Animated Ocean Canvas Background */}
+      <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
+        <OceanCanvas />
+      </div>
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
+
+      <div className="relative z-10">
+        <header className="flex justify-between items-end mb-8 border-b border-gold/20 pb-4">
+          <div>
+            <h1 className="text-4xl font-serif text-gold uppercase tracking-widest flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8" />
+              Volunteer Watch
+            </h1>
+            <p className="text-parchment/60 font-mono text-sm mt-2">Logged in as {currentUsername}</p>
+          </div>
+        </header>
 
       <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6 max-w-5xl mx-auto">
         <h2 className="text-xl font-serif text-gold mb-4 uppercase tracking-widest">Active Fleet</h2>
@@ -95,7 +103,7 @@ export function VolunteerClient({ teams, currentUsername }: any) {
           <p className="text-center text-parchment/40 italic py-12 font-serif">No teams have set sail yet.</p>
         )}
       </div>
-
     </div>
-  );
+  </div>
+);
 }

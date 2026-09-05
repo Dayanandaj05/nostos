@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { overrideTeamLevel, toggleLevelLock, addIncidentLog } from "@/app/actions/adminActions";
 import { AlertCircle, Lock, Unlock, Download } from "lucide-react";
+import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 export function AdminClient({ teams, levels, logs, currentUsername }: any) {
   const [logInput, setLogInput] = useState("");
@@ -58,20 +59,26 @@ export function AdminClient({ teams, levels, logs, currentUsername }: any) {
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
-      + rows.map(e => e.join(",")).join("\n");
+      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `nostos_rankings_${new Date().toISOString()}.csv`);
+    link.setAttribute("download", "nostos_leaderboard_rankings.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="min-h-screen bg-ink text-parchment p-8">
+    <div className="min-h-screen bg-ink text-parchment p-8 relative overflow-hidden">
+      {/* Less Intense Animated Ocean Canvas Background */}
+      <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
+        <OceanCanvas />
+      </div>
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
+
+      <div className="relative z-10">
       <header className="flex justify-between items-end mb-8 border-b border-gold/20 pb-4">
         <div>
           <h1 className="text-4xl font-serif text-gold uppercase tracking-widest">Admin Control</h1>
@@ -186,8 +193,8 @@ export function AdminClient({ teams, levels, logs, currentUsername }: any) {
             </form>
           </div>
         </div>
-
       </div>
     </div>
-  );
+  </div>
+);
 }

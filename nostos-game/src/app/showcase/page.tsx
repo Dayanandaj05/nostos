@@ -9,6 +9,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { Anchor } from "lucide-react";
+import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 // Ornamental Motifs
 const CompassRose = ({ className }: { className?: string }) => (
@@ -26,8 +27,14 @@ export default function ShowcasePage() {
   const [isHoveringMap, setIsHoveringMap] = React.useState(false);
 
   return (
-    <main className="min-h-screen text-parchment font-serif pb-48 selection:bg-gold selection:text-ink">
+    <main className="min-h-screen text-parchment font-serif pb-48 selection:bg-gold selection:text-ink relative overflow-hidden">
       
+      {/* Less Intense Animated Ocean Canvas Background */}
+      <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
+        <OceanCanvas />
+      </div>
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
+
       {/* The Epic Hero Horizon */}
       <section className="relative w-full min-h-[85vh] flex flex-col justify-end p-12 md:p-24 overflow-hidden border-b border-parchment/10">
         

@@ -10,6 +10,15 @@ import { registerTeam, RegisterState } from "@/app/actions/registerTeam";
 import { Anchor } from "lucide-react";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
+const GreekKeyLine = () => (
+  <svg width="100%" height="16" viewBox="0 0 600 16" preserveAspectRatio="xMidYMid slice" className="text-gold/40 my-3">
+    <pattern id="gk-reg" x="0" y="0" width="30" height="16" patternUnits="userSpaceOnUse">
+      <path d="M0,14 L8,14 L8,3 L22,3 L22,14 L30,14 L30,8 L14,8 L14,11 L25,11 L25,6 L5,6 L5,16" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </pattern>
+    <rect x="0" y="0" width="100%" height="16" fill="url(#gk-reg)" />
+  </svg>
+);
+
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState<RegisterState, FormData>(registerTeam, { success: false });
   
@@ -58,7 +67,7 @@ export default function RegisterPage() {
         </div>
         <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.7)_0%,rgba(15,23,37,0.92)_70%,rgba(10,16,25,0.98)_100%)] pointer-events-none z-0" />
 
-        <div className="max-w-2xl text-center space-y-12 relative z-10">
+        <div className="max-w-2xl text-center space-y-12 relative z-10 p-8 border border-gold/30 bg-[#0B121E]/90 rounded-3xl shadow-[0_0_60px_rgba(201,162,75,0.2)]">
           <Anchor className="w-24 h-24 text-gold mx-auto animate-pulse" />
           <h1 className="text-4xl md:text-6xl text-gold tracking-widest uppercase">Vessel Recorded</h1>
           <p className="text-xl md:text-3xl text-parchment/80 italic leading-relaxed">
@@ -66,7 +75,7 @@ export default function RegisterPage() {
           </p>
           <div className="pt-8">
             <Link href="/login" passHref>
-              <Button className="px-12 py-4 text-xl">Proceed to Login</Button>
+              <Button className="px-12 py-4 text-xl shadow-[0_0_30px_rgba(201,162,75,0.3)]">Proceed to Login</Button>
             </Link>
           </div>
         </div>
@@ -77,7 +86,7 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen text-parchment font-serif bg-ink selection:bg-gold selection:text-ink flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
       {/* Less Intense Animated Ocean Canvas Background */}
-      <div className="fixed inset-0 opacity-40 pointer-events-none z-0">
+      <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
         <OceanCanvas />
       </div>
       
@@ -85,17 +94,24 @@ export default function RegisterPage() {
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.65)_0%,rgba(15,23,37,0.88)_70%,rgba(10,16,25,0.96)_100%)] pointer-events-none z-0" />
       
       <div className="relative z-10 w-full max-w-xl">
-        <div className="text-center mb-16 space-y-6">
-          <h1 className="text-5xl md:text-7xl text-gold tracking-widest uppercase font-normal">Declare</h1>
+        <div className="text-center mb-12 space-y-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-gold/30 bg-gold/10 text-gold text-xs uppercase tracking-widest mb-1 font-serif">
+            ⚓ NOSTOS Crew Registration • Odyssey 2026
+          </div>
+          <h1 className="text-5xl md:text-7xl text-gold tracking-widest uppercase font-normal drop-shadow-[0_4px_25px_rgba(201,162,75,0.3)]">Declare</h1>
           <p className="text-xl text-parchment/60 italic">Who dares to sail the wine-dark sea?</p>
+          <div className="max-w-xs mx-auto">
+            <GreekKeyLine />
+          </div>
         </div>
 
-        <Card className="bg-ink/60 border border-wave/20 p-6 md:p-12 shadow-2xl backdrop-blur-md relative overflow-visible">
-          {/* Decorative Corner Anchors */}
-          <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-gold/40" />
-          <div className="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-gold/40" />
-          <div className="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-gold/40" />
-          <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-gold/40" />
+        <Card className="bg-[#0B121E]/95 border border-gold/30 p-6 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative overflow-visible rounded-3xl">
+          {/* Decorative Corner Anchors & Gold Brackets */}
+          <div className="absolute -top-3 -left-3 w-5 h-5 border-t-2 border-l-2 border-gold/70" />
+          <div className="absolute -top-3 -right-3 w-5 h-5 border-t-2 border-r-2 border-gold/70" />
+          <div className="absolute -bottom-3 -left-3 w-5 h-5 border-b-2 border-l-2 border-gold/70" />
+          <div className="absolute -bottom-3 -right-3 w-5 h-5 border-b-2 border-r-2 border-gold/70" />
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-gold to-transparent" />
 
           {state.errors?.general && (
             <ErrorBanner message={state.errors.general} className="mb-8" />
@@ -170,7 +186,7 @@ export default function RegisterPage() {
                   <button 
                     type="button" 
                     onClick={() => setShowFourthMember(true)}
-                    className="text-gold/60 hover:text-gold tracking-widest uppercase text-sm border border-dashed border-gold/30 hover:border-gold/60 p-4 w-full text-center transition-colors"
+                    className="text-gold/60 hover:text-gold tracking-widest uppercase text-sm border border-dashed border-gold/30 hover:border-gold/60 p-4 w-full text-center transition-colors rounded-xl bg-gold/5 hover:bg-gold/10"
                   >
                     + Add a fourth sailor
                   </button>
@@ -184,7 +200,7 @@ export default function RegisterPage() {
 
             <Button 
               type="submit" 
-              className="w-full py-4 text-xl mt-8" 
+              className="w-full py-4 text-xl mt-8 shadow-[0_0_30px_rgba(201,162,75,0.3)]" 
               disabled={isPending || !!shipTakenError || isCheckingShip}
             >
               {isPending ? "Recording in the logs..." : "Swear the Oath & Register"}
