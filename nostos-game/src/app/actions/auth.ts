@@ -1,0 +1,153 @@
+"use server";
+
+import { supabase } from "@/lib/supabase";
+import bcrypt from "bcryptjs";
+import { createSession } from "@/lib/session";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export type LoginState = {
+  success: boolean;
+  error?: string;
+};
+
+// Ensure a device token exists
+async function ensureDeviceToken() {
+  const cookieStore = await cookies();
+  if (!cookieStore.has("device_token")) {
+    const token = crypto.randomUUID();
+    cookieStore.set("device_token", token, {
+      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+  }
+}
+
+export async function loginTeam(prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const ship_name = formData.get("ship_name")?.toString().trim();
+  const password = formData.get("password")?.toString();
+
+  if (!ship_name || !password) {
+    return { success: false, error: "Ship name and password are required." };
+  }
+
+  const { data: team, error } = await supabase
+    .from("teams")
+    .select("id, password_hash")
+    .ilike("ship_name", ship_name)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return { success: false, error: "The Oracle is silent. Try again." };
+  }
+
+  if (!team) {
+    return { success: false, error: "No such vessel is registered in our logs." };
+  }
+
+  const isMatch = await bcrypt.compare(password, team.password_hash);
+  if (!isMatch) {
+    return { success: false, error: "Incorrect password. The sea rejects you." };
+  }
+
+  // Create session
+  await createSession({ role: "team", id: team.id, ship_name });
+  await ensureDeviceToken();
+
+  redirect("/play");
+}
+
+export async function loginAdmin(prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const username = formData.get("username")?.toString().trim();
+  const password = formData.get("password")?.toString();
+
+  if (!username || !password) {
+    return { success: false, error: "Username and password are required." };
+  }
+
+  const { data: admin, error } = await supabase
+    .from("admins")
+    .select("id, password_hash")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (error || !admin) {
+    return { success: false, error: "Invalid credentials." };
+  }
+
+  // Assuming admins are seeded, you would bcrypt.compare here. 
+  // For safety in this environment without a seeded admin password, 
+  // we still attempt a bcrypt compare.
+  const isMatch = await bcrypt.compare(password, admin.password_hash);
+  if (!isMatch) {
+    return { success: false, error: "Invalid credentials." };
+  }
+
+  await createSession({ role: "admin", id: admin.id, username });
+  redirect("/admin");
+}
+
+// Development quick-login endpoints
+export async function quickLoginTestTeam() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Not allowed in production");
+  }
+
+  // Find or create a test team
+  let { data: team } = await supabase
+    .from("teams")
+    .select("id, password_hash")
+    .eq("ship_name", "Test Argo")
+    .maybeSingle();
+
+  if (!team) {
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash("testpassword", salt);
+    const { data: newTeam } = await supabase
+      .from("teams")
+      .insert([{ ship_name: "Test Argo", password_hash, member_names: ["Tester 1", "Tester 2", "Tester 3"] }])
+      .select("id, password_hash")
+      .single();
+    team = newTeam;
+  }
+
+  if (team) {
+    await createSession({ role: "team", id: team.id, ship_name: "Test Argo" });
+    await ensureDeviceToken();
+  }
+  
+  redirect("/play");
+}
+
+export async function quickLoginAdmin() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Not allowed in production");
+  }
+
+  let { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("username", "testadmin")
+    .maybeSingle();
+
+  if (!admin) {
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash("adminpass", salt);
+    const { data: newAdmin } = await supabase
+      .from("admins")
+      .insert([{ username: "testadmin", password_hash, role: "admin" }])
+      .select("id")
+      .single();
+    admin = newAdmin;
+  }
+
+  if (admin) {
+    await createSession({ role: "admin", id: admin.id, username: "testadmin" });
+  }
+
+  redirect("/admin");
+}
