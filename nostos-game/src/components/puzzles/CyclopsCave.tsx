@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, Key, Sparkles } from "lucide-react";
 
 interface CyclopsCaveProps {
   data: {
@@ -11,53 +11,55 @@ interface CyclopsCaveProps {
 }
 
 export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
-  const [step, setStep] = useState(0); // 0: riddle 1, 1: riddle 2, 2: riddle 3 (main input)
+  const [step, setStep] = useState(0); // 0: riddle 1, 1: riddle 2, 2: completed riddles
   const [localInput, setLocalInput] = useState("");
   const [error, setError] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
-  
-  const formRef = useRef<HTMLFormElement | null>(null);
 
-  useEffect(() => {
-    const parentForm = document.getElementById('oracle-form') as HTMLFormElement;
-    if (parentForm) {
-      formRef.current = parentForm;
-      
-      const handleSubmit = (e: SubmitEvent) => {
-        if (step === 2 && !doorOpen) {
-          const input = parentForm.querySelector('input[name="answer"]') as HTMLInputElement;
-          if (input && input.value.trim().toUpperCase() === "NOBODY") {
-            e.preventDefault(); // Pause the submission
-            setDoorOpen(true);
-            
-            // Wait for animation, then submit for real
-            setTimeout(() => {
-              parentForm.removeEventListener('submit', handleSubmit);
-              parentForm.requestSubmit();
-            }, 1500);
-          }
+  const clean = (str: string) => str.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  const triggerOracleSubmit = () => {
+    setDoorOpen(true);
+    setTimeout(() => {
+      const parentForm = document.getElementById('oracle-form') as HTMLFormElement;
+      if (parentForm) {
+        const input = parentForm.querySelector('input[name="answer"]') as HTMLInputElement;
+        if (input) {
+          input.value = "NOBODY";
         }
-      };
+        parentForm.requestSubmit();
+      }
+    }, 1200);
+  };
 
-      parentForm.addEventListener('submit', handleSubmit);
-      return () => parentForm.removeEventListener('submit', handleSubmit);
-    }
-  }, [step, doorOpen]);
-
-  // Handle local riddles (0 and 1)
   const handleLocalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (step >= data.riddles.length) return;
+    if (step >= 2) return;
 
-    const currentCorrect = data.riddles[step].a;
-    if (localInput.trim().toUpperCase() === currentCorrect) {
-      setStep(s => s + 1);
-      setLocalInput("");
+    const currentTarget = step === 0 ? "NOTHING" : "NOBODY";
+    const userEntered = clean(localInput);
+
+    if (!userEntered) return;
+
+    if (userEntered === currentTarget || userEntered.includes(currentTarget)) {
       setError(false);
+      setLocalInput("");
+      const nextStep = step + 1;
+      setStep(nextStep);
+
+      if (nextStep === 2) {
+        triggerOracleSubmit();
+      }
     } else {
       setError(true);
-      setTimeout(() => setError(false), 1000);
+      setTimeout(() => setError(false), 1200);
     }
+  };
+
+  const handleAutoSolve = () => {
+    setStep(2);
+    setError(false);
+    triggerOracleSubmit();
   };
 
   return (
@@ -105,35 +107,44 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
       </div>
 
       {/* Riddle UI */}
-      <div className="w-full max-w-lg min-h-[120px] flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg min-h-[140px] flex flex-col items-center justify-center space-y-4">
         {step < 2 ? (
           <form onSubmit={handleLocalSubmit} className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <p className="text-parchment/90 font-serif text-center md:text-lg italic leading-relaxed">
-              "{data.riddles[step].q}"
+              {step === 0 
+                ? `"What is greater than the gods, more evil than the demons, the poor have it, the rich need it, and if you eat it, you will die?"`
+                : `"If you are NOTHING to him, what must you call yourself?"`
+              }
             </p>
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input 
                 type="text" 
                 value={localInput}
                 onChange={e => setLocalInput(e.target.value)}
                 placeholder="Speak..."
-                className={`flex-1 bg-ink/50 border ${error ? 'border-danger/80 animate-shake' : 'border-gold/30 focus:border-gold/80'} px-4 py-2 rounded text-parchment outline-none font-serif uppercase tracking-widest`}
+                className={`flex-1 bg-ink/50 border ${error ? 'border-danger text-danger bg-danger/10 animate-shake' : 'border-gold/30 focus:border-gold/80'} px-4 py-2 rounded text-parchment outline-none font-serif uppercase tracking-widest`}
               />
               <button 
                 type="submit"
-                className="px-6 py-2 bg-gold/10 hover:bg-gold/20 border border-gold/50 rounded text-gold uppercase tracking-widest transition-colors"
+                className="px-6 py-2 bg-gold/10 hover:bg-gold/20 border border-gold/50 rounded text-gold uppercase tracking-widest transition-colors font-serif font-bold flex items-center justify-center gap-2"
               >
+                <Key className="w-4 h-4" />
                 Unlock
               </button>
             </div>
+            {error && (
+              <p className="text-danger font-serif text-sm italic text-center animate-fade-in">
+                The cave echoes with silence... your answer is incorrect.
+              </p>
+            )}
           </form>
         ) : (
-          <div className="w-full space-y-4 animate-in fade-in zoom-in duration-700">
-            <p className="text-gold font-serif text-center md:text-xl tracking-widest">
-              The final lock awaits the true name.
+          <div className="w-full space-y-4 animate-in fade-in zoom-in duration-700 text-center">
+            <p className="text-gold font-serif text-2xl tracking-widest uppercase animate-pulse">
+              The Cave Door Opens!
             </p>
-            <p className="text-parchment/60 font-serif italic text-center">
-              Speak it to the Oracle below to break the seal.
+            <p className="text-parchment/80 font-serif italic">
+              Escaping Polyphemus's cave... advancing to Trial 4.
             </p>
           </div>
         )}

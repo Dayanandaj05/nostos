@@ -32,10 +32,10 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
 
       // 2. Fetch assignment from server
       const result = await getVariant(levelId, token, data.variants);
-      if (result.variant_key) {
+      if (result && result.variant_key) {
         setVariant(result.variant_key);
       } else {
-        console.error(result.error);
+        setVariant(data.variants ? data.variants[0] : "THE");
       }
       setLoading(false);
     }

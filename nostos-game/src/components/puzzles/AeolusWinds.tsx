@@ -110,6 +110,7 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
   };
 
   const handleReveal = (index: number) => {
+    if (revealed[index]) return;
     setRevealed(prev => {
       const next = [...prev];
       next[index] = true;
@@ -124,7 +125,7 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
         {!revealed.every(Boolean) ? (
           <div className="w-full absolute inset-0 animate-in fade-in duration-500">
             <p className="text-parchment/80 font-serif italic text-lg leading-relaxed text-center mb-8">
-              Click the icons to reveal the hidden winds.
+              Click the golden coins to flip and reveal the hidden winds.
             </p>
             <div className="flex flex-wrap justify-center gap-4 md:gap-8">
               {data.words.map((word, i) => {
@@ -133,14 +134,23 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
                 return (
                   <div 
                     key={i} 
-                    onClick={() => !isRevealed && handleReveal(i)}
-                    className={`relative flex items-center justify-center w-16 h-16 md:w-24 md:h-24 rounded-full border-2 transition-all duration-500 ${isRevealed ? 'border-gold/20 bg-ink shadow-none scale-95' : 'border-gold/60 bg-ink/80 shadow-[0_0_20px_rgba(201,162,75,0.3)] cursor-pointer hover:scale-110 hover:border-gold'}`}
+                    onClick={() => handleReveal(i)}
+                    className="w-16 h-16 md:w-24 md:h-24 [perspective:1000px] cursor-pointer"
                   >
-                    <div className={`transition-opacity duration-500 absolute inset-0 flex items-center justify-center ${isRevealed ? 'opacity-0' : 'opacity-100'}`}>
-                      <Icon className="text-gold w-6 h-6 md:w-10 md:h-10" />
-                    </div>
-                    <div className={`transition-opacity duration-500 absolute inset-0 flex items-center justify-center ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
-                      <span className="text-gold font-serif text-[10px] md:text-sm tracking-widest">{word}</span>
+                    <div 
+                      className={`relative w-full h-full rounded-full transition-transform duration-700 [transform-style:preserve-3d] shadow-[0_0_20px_rgba(201,162,75,0.3)] hover:shadow-[0_0_30px_rgba(201,162,75,0.6)] ${
+                        isRevealed ? '[transform:rotateY(180deg)]' : 'hover:scale-105'
+                      }`}
+                    >
+                      {/* FRONT SIDE — ICON */}
+                      <div className="absolute inset-0 w-full h-full rounded-full border-2 border-gold/60 bg-ink/90 flex items-center justify-center [backface-visibility:hidden]">
+                        <Icon className="text-gold w-6 h-6 md:w-10 md:h-10 drop-shadow-[0_0_10px_rgba(201,162,75,0.5)]" />
+                      </div>
+
+                      {/* BACK SIDE — TEXT */}
+                      <div className="absolute inset-0 w-full h-full rounded-full border-2 border-gold bg-ink flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)] shadow-[0_0_15px_rgba(201,162,75,0.4)]">
+                        <span className="text-gold font-serif text-[10px] md:text-sm font-bold tracking-widest uppercase">{word}</span>
+                      </div>
                     </div>
                   </div>
                 );

@@ -31,21 +31,21 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
 
   try {
     // 1. Get current level of the team
-    const { data: progData } = await supabase
+    const { data: progData, error: progErr } = await supabase
       .from("progress")
       .select("current_level, incorrect_count, correct_count")
       .eq("team_id", teamId)
       .single();
-    if (progData) progress = progData;
+    if (progData && !progErr) progress = progData;
 
     if (progress) {
       // 2. Fetch level data
-      const { data: lvlData } = await supabase
+      const { data: lvlData, error: lvlErr } = await supabase
         .from("levels")
         .select("id, correct_answer, is_locked")
         .eq("level_number", progress.current_level)
         .single();
-      if (lvlData) level = lvlData;
+      if (lvlData && !lvlErr) level = lvlData;
     }
   } catch (err) {
     console.warn("Supabase unavailable for answer submission, using dev fallback state:", err);
@@ -74,7 +74,19 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     return { success: false, error: "The Oracle is currently locked by the gods." };
   }
 
-  const isCorrect = submittedAnswer.toLowerCase() === level.correct_answer.trim().toLowerCase();
+  const normalize = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const normSubmitted = normalize(submittedAnswer);
+  const normTarget = normalize(level.correct_answer);
+
+  let isCorrect = normSubmitted === normTarget;
+
+  if (!isCorrect) {
+    if (level.correct_answer === "6_CORRECT" && (normSubmitted === "6" || normSubmitted === "6correct")) {
+      isCorrect = true;
+    } else if (level.correct_answer === "DEPENDS_ON_PATH" && (normSubmitted === "5" || normSubmitted === "15" || normSubmitted === "15" || normSubmitted === "dependsonpath")) {
+      isCorrect = true;
+    }
+  }
 
   try {
     // Log submission to DB if available
@@ -94,6 +106,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     const nextLevel = currentLevel + 1;
     const isCompleted = nextLevel > 10;
     
+    let dbSuccess = false;
     try {
       const updateData: any = {
         current_level: nextLevel,
@@ -102,12 +115,17 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       };
       if (isCompleted) updateData.completed_at = new Date().toISOString();
 
-      await supabase
+      const { error: updateErr } = await supabase
         .from("progress")
         .update(updateData)
         .eq("team_id", teamId);
+
+      if (!updateErr) dbSuccess = true;
     } catch (e) {
-      // update mock state
+      dbSuccess = false;
+    }
+
+    if (!dbSuccess) {
       mockDevProgressState[teamId] = {
         current_level: nextLevel,
         incorrect_count: progress.incorrect_count || 0
@@ -119,15 +137,22 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   } else {
     const newIncorrectCount = (progress.incorrect_count || 0) + 1;
     
+    let dbSuccess = false;
     try {
-      await supabase
+      const { error: updateErr } = await supabase
         .from("progress")
         .update({
           incorrect_count: newIncorrectCount,
           last_updated_at: new Date().toISOString(),
         })
         .eq("team_id", teamId);
+
+      if (!updateErr) dbSuccess = true;
     } catch (e) {
+      dbSuccess = false;
+    }
+
+    if (!dbSuccess) {
       mockDevProgressState[teamId] = {
         current_level: currentLevel,
         incorrect_count: newIncorrectCount

@@ -30,10 +30,10 @@ export default async function PlayPage() {
       .eq("team_id", teamId)
       .maybeSingle();
 
-    if (data) {
+    if (data && !error) {
       progress = data;
-    } else {
-      const { data: newProgress } = await supabase
+    } else if (!error) {
+      const { data: newProgress, error: insertErr } = await supabase
         .from("progress")
         .insert([{ 
           team_id: teamId, 
@@ -42,7 +42,7 @@ export default async function PlayPage() {
         }])
         .select("current_level, incorrect_count")
         .single();
-      if (newProgress) progress = newProgress;
+      if (newProgress && !insertErr) progress = newProgress;
     }
   } catch (err) {
     console.warn("Supabase connection unavailable, using local dev progress fallback:", err);

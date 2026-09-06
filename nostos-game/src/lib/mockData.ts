@@ -101,5 +101,12 @@ export const SEED_LEVELS = [
   }
 ];
 
-// Fallback in-memory dev progress state when database is unreachable
-export const mockDevProgressState: Record<string, { current_level: number; incorrect_count: number }> = {};
+// Fallback in-memory dev progress state when database is unreachable (persisted across Next.js HMR reloads)
+const globalForDev = globalThis as unknown as {
+  mockDevProgressState?: Record<string, { current_level: number; incorrect_count: number }>;
+};
+
+export const mockDevProgressState = globalForDev.mockDevProgressState ?? {};
+if (process.env.NODE_ENV !== 'production') {
+  globalForDev.mockDevProgressState = mockDevProgressState;
+}

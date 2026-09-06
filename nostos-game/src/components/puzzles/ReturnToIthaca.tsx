@@ -116,37 +116,39 @@ export function ReturnToIthaca({ data }: ReturnToIthacaProps) {
           </div>
 
           {/* Controls */}
-          <div className="flex space-x-4">
-            {!isPlaying && !hasFailed && (
-              <button 
-                onClick={handleStart}
-                className="px-8 py-3 bg-gold/20 hover:bg-gold/30 border border-gold rounded uppercase tracking-widest text-gold text-lg shadow-[0_0_15px_rgba(201,162,75,0.4)] hover:shadow-[0_0_25px_rgba(201,162,75,0.8)] transition-all"
-              >
-                Begin Alignment
-              </button>
-            )}
-            
-            {isPlaying && (
-              <button 
-                onClick={handleStop}
-                className="px-12 py-3 bg-white hover:bg-gray-200 border-2 border-gold rounded uppercase tracking-widest text-black text-xl font-bold shadow-[0_0_30px_rgba(255,255,255,0.6)] transition-all animate-pulse"
-              >
-                STOP
-              </button>
-            )}
-
-            {hasFailed && !isPlaying && (
-              <div className="flex flex-col items-center space-y-4">
-                <span className="text-danger font-serif tracking-widest uppercase animate-pulse">Misaligned</span>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="flex space-x-4">
+              {!isPlaying && !hasFailed && (
                 <button 
                   onClick={handleStart}
-                  className="flex items-center space-x-2 px-6 py-2 border border-danger/50 rounded text-danger hover:bg-danger/10 transition-colors"
+                  className="px-8 py-3 bg-gold/20 hover:bg-gold/30 border border-gold rounded uppercase tracking-widest text-gold text-lg shadow-[0_0_15px_rgba(201,162,75,0.4)] hover:shadow-[0_0_25px_rgba(201,162,75,0.8)] transition-all"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Retry</span>
+                  Begin Alignment
                 </button>
-              </div>
-            )}
+              )}
+              
+              {isPlaying && (
+                <button 
+                  onClick={handleStop}
+                  className="px-12 py-3 bg-white hover:bg-gray-200 border-2 border-gold rounded uppercase tracking-widest text-black text-xl font-bold shadow-[0_0_30px_rgba(255,255,255,0.6)] transition-all animate-pulse"
+                >
+                  STOP
+                </button>
+              )}
+
+              {hasFailed && !isPlaying && (
+                <div className="flex flex-col items-center space-y-4">
+                  <span className="text-danger font-serif tracking-widest uppercase animate-pulse">Misaligned</span>
+                  <button 
+                    onClick={handleStart}
+                    className="flex items-center space-x-2 px-6 py-2 border border-danger/50 rounded text-danger hover:bg-danger/10 transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Retry</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (

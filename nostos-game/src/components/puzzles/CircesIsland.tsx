@@ -195,15 +195,28 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
                     {hotspot.letter}
                   </text>
                 ) : (
-                  <circle 
-                    cx={coords.cx} 
-                    cy={coords.cy} 
-                    r={coords.r} 
-                    fill="transparent" 
-                    cursor="pointer"
-                    onClick={() => handleHotspotClick(i)}
-                    className="hover:fill-gold/10 transition-colors"
-                  />
+                  <g>
+                    <circle 
+                      cx={coords.cx} 
+                      cy={coords.cy} 
+                      r={coords.r} 
+                      fill="transparent" 
+                      stroke="#c9a24b"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 4"
+                      className="animate-pulse opacity-40 hover:opacity-100 cursor-pointer transition-opacity"
+                      onClick={() => handleHotspotClick(i)}
+                    />
+                    <circle 
+                      cx={coords.cx} 
+                      cy={coords.cy} 
+                      r={coords.r} 
+                      fill="transparent" 
+                      cursor="pointer"
+                      onClick={() => handleHotspotClick(i)}
+                      className="hover:fill-gold/10 transition-colors"
+                    />
+                  </g>
                 )}
               </g>
             );
@@ -215,7 +228,7 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
           <div className="absolute top-4 left-4 bg-ink/80 backdrop-blur-sm border border-gold/30 px-4 py-2 rounded-lg pointer-events-none">
             <p className="text-parchment/80 font-serif italic text-sm md:text-base flex items-center space-x-2">
               <Sparkles className="w-4 h-4 text-gold" />
-              <span>Search the island to find the ingredients.</span>
+              <span>Search the island to uncover the hidden ingredients.</span>
             </p>
           </div>
         )}
