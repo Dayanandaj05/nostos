@@ -30,6 +30,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   let level: { id: string; correct_answer: string; is_locked?: boolean } | null = null;
 
   try {
+    const t0 = Date.now();
     // 1. Get current level of the team
     const { data: progData, error: progErr } = await supabase
       .from("progress")
@@ -37,6 +38,8 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       .eq("team_id", teamId)
       .single();
     if (progData && !progErr) progress = progData;
+    const t1 = Date.now();
+    console.log(`[submitAnswer] progress fetch took ${t1 - t0}ms`);
 
     if (progress) {
       // 2. Fetch level data
@@ -46,6 +49,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
         .eq("level_number", progress.current_level)
         .single();
       if (lvlData && !lvlErr) level = lvlData;
+      console.log(`[submitAnswer] level fetch took ${Date.now() - t1}ms`);
     }
   } catch (err) {
     console.warn("Supabase unavailable for answer submission, using dev fallback state:", err);
@@ -89,6 +93,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   }
 
   try {
+    const tSubStart = Date.now();
     // Log submission to DB if available
     await supabase
       .from("submissions")
@@ -98,6 +103,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
         submitted_answer: submittedAnswer,
         was_correct: isCorrect
       }]);
+    console.log(`[submitAnswer] submissions insert took ${Date.now() - tSubStart}ms`);
   } catch (e) {
     // ignore DB log errors in dev
   }
@@ -115,10 +121,12 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       };
       if (isCompleted) updateData.completed_at = new Date().toISOString();
 
+      const tUpStart = Date.now();
       const { error: updateErr } = await supabase
         .from("progress")
         .update(updateData)
         .eq("team_id", teamId);
+      console.log(`[submitAnswer] progress update (correct) took ${Date.now() - tUpStart}ms`);
 
       if (!updateErr) dbSuccess = true;
     } catch (e) {

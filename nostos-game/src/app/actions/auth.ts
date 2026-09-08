@@ -34,15 +34,23 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
     return { success: false, error: "Ship name and password are required." };
   }
 
-  const { data: team, error } = await supabase
-    .from("teams")
-    .select("id, password_hash")
-    .ilike("ship_name", ship_name)
-    .maybeSingle();
+  let team: any = null;
+  
+  try {
+    const { data, error } = await supabase
+      .from("teams")
+      .select("id, password_hash")
+      .ilike("ship_name", ship_name)
+      .maybeSingle();
 
-  if (error) {
-    console.error(error);
-    return { success: false, error: "The Oracle is silent. Try again." };
+    if (error) {
+      console.error(error);
+      return { success: false, error: "The Oracle is silent. Try again." };
+    }
+    team = data;
+  } catch (err) {
+    console.error("Supabase connection failed:", err);
+    return { success: false, error: "The Oracle is offline. Please try again later." };
   }
 
   if (!team) {
@@ -69,14 +77,22 @@ export async function loginAdmin(prevState: LoginState, formData: FormData): Pro
     return { success: false, error: "Username and password are required." };
   }
 
-  const { data: admin, error } = await supabase
-    .from("admins")
-    .select("id, password_hash")
-    .eq("username", username)
-    .maybeSingle();
+  let admin: any = null;
+  
+  try {
+    const { data, error } = await supabase
+      .from("admins")
+      .select("id, password_hash")
+      .eq("username", username)
+      .maybeSingle();
 
-  if (error || !admin) {
-    return { success: false, error: "Invalid credentials." };
+    if (error || !data) {
+      return { success: false, error: "Invalid credentials." };
+    }
+    admin = data;
+  } catch (err) {
+    console.error("Supabase connection failed:", err);
+    return { success: false, error: "The Oracle is offline. Please try again later." };
   }
 
   // Assuming admins are seeded, you would bcrypt.compare here. 
@@ -100,13 +116,13 @@ export async function quickLoginTestTeam() {
   let teamId = "dev-test-argo-id";
 
   try {
-    let { data: team } = await supabase
+    let { data: team, error } = await supabase
       .from("teams")
       .select("id, password_hash")
       .eq("ship_name", "Test Argo")
       .maybeSingle();
 
-    if (!team) {
+    if (!team && !error) {
       const salt = await bcrypt.genSalt(10);
       const password_hash = await bcrypt.hash("testpassword", salt);
       const { data: newTeam } = await supabase
@@ -137,13 +153,13 @@ export async function quickLoginAdmin() {
   let adminId = "dev-test-admin-id";
 
   try {
-    let { data: admin } = await supabase
+    let { data: admin, error } = await supabase
       .from("admins")
       .select("id")
       .eq("username", "testadmin")
       .maybeSingle();
 
-    if (!admin) {
+    if (!admin && !error) {
       const salt = await bcrypt.genSalt(10);
       const password_hash = await bcrypt.hash("adminpass", salt);
       const { data: newAdmin } = await supabase

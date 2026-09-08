@@ -135,20 +135,32 @@ export default async function PlayPage() {
 
   // 3. Fetch the level data with fallback
   let level: any = null;
-
+  
   try {
-    const { data } = await supabase
+    const { data: lvlData, error: lvlError } = await supabase
       .from("levels")
       .select("*")
       .eq("level_number", currentLevelNumber)
       .single();
-    if (data) level = data;
+
+    if (lvlData && !lvlError) {
+      level = lvlData;
+    }
   } catch (err) {
-    console.warn("Supabase level query failed, using SEED_LEVELS fallback:", err);
+    console.warn("Supabase unavailable, using local mock level data.");
+  }
+
+  // Fallback to local mock data if offline
+  if (!level) {
+    level = SEED_LEVELS.find((l: any) => l.level_number === currentLevelNumber);
   }
 
   if (!level) {
-    level = SEED_LEVELS.find(l => l.level_number === currentLevelNumber) || SEED_LEVELS[0];
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-ink text-danger p-6">
+        <p>The Oracle cannot find the trial for level {currentLevelNumber}.</p>
+      </div>
+    );
   }
 
   // Render the engine
