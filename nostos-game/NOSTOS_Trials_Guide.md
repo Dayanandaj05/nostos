@@ -61,8 +61,8 @@ This document provides a comprehensive breakdown of the 10 core trials in the NO
 * **Component Design:** (`src/components/puzzles/HiddenObject.tsx`)
   A visual "point-and-click" style interaction. The UI displays an opulent, stylized scene of Circe's hall. Certain subtle geometric elements in the background act as invisible/faint clickable hotspots. When clicked, a specific letter illuminates.
 * **How to Solve:**
-  Players must scour the image to find the 3 hidden hotspots. Clicking them reveals the letters P, I, and G. They must deduce the word to break the swine spell.
-  * **Answer:** `PIG`
+  Players must complete 4 interactive tasks across the island (Cut Thorny Bush, Unlock Door, Inspect Shrine, Stir Cauldron) to gather the letters M, O, L, and Y. They must arrange the divine herb name to break Circe's spell.
+  * **Answer:** `MOLY`
 
 ---
 

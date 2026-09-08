@@ -8,13 +8,10 @@ declare global {
 }
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-  const urlString = input instanceof URL ? input.toString() : (typeof input === 'string' ? input : input.url);
-  const isLocal = urlString.includes('127.0.0.1') || urlString.includes('localhost');
-  
-  if (isLocal && process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production") {
     let isOfflineLocked = false;
     let lockFilePath = "";
-    
+
     if (typeof window === 'undefined') {
       try {
         const fs = require('fs');
@@ -24,17 +21,17 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
         isOfflineLocked = fs.existsSync(lockFilePath);
       } catch (e) {}
     }
-    
-    // Check global state or file system lock (cross-worker)
+
+    // Check global state or file system lock (cross-worker) - 0ms instant reject
     if (globalThis._nostos_isOffline || isOfflineLocked) {
       return Promise.reject(new Error("Supabase is offline (cached)"));
     }
-    
+
     const controller = new AbortController();
     if (init?.signal) {
       init.signal.addEventListener('abort', () => controller.abort());
     }
-    const timeoutId = setTimeout(() => controller.abort("Forced Timeout"), 150);
+    const timeoutId = setTimeout(() => controller.abort("Forced Timeout"), 100);
 
     return fetch(input, { ...init, signal: controller.signal })
       .then(res => {

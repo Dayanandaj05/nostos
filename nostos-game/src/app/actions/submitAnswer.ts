@@ -9,6 +9,7 @@ export type SubmitState = {
   success: boolean;
   error?: string;
   incorrect_count?: number;
+  completed_level?: number;
 };
 
 export async function submitAnswer(prevState: SubmitState, formData: FormData): Promise<SubmitState> {
@@ -141,7 +142,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     }
 
     revalidatePath("/play");
-    return { success: true };
+    return { success: true, completed_level: currentLevel };
   } else {
     const newIncorrectCount = (progress.incorrect_count || 0) + 1;
     

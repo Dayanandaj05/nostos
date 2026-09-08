@@ -39,40 +39,44 @@ export function SirensSong({ levelId }: SirensSongProps) {
   
   const channelRef = useRef<any>(null);
 
-  // Init Variant and Realtime Channel
+  // Init Variant and Realtime Channel instantly
   useEffect(() => {
-    async function init() {
-      // 1. Local Device Token
-      let token = localStorage.getItem("nostos_device_token");
-      if (!token) {
-        token = crypto.randomUUID();
-        localStorage.setItem("nostos_device_token", token);
+    let isMounted = true;
+    let token = localStorage.getItem("nostos_device_token");
+    if (!token) {
+      token = crypto.randomUUID();
+      localStorage.setItem("nostos_device_token", token);
+    }
+
+    // Default to 'clear' sense immediately so there is ZERO delay loading the enigma
+    setVariant("clear");
+    setLoading(false);
+
+    // Fetch exact assignment asynchronously in background
+    getSirensVariant(levelId, token).then(vRes => {
+      if (isMounted && vRes && vRes.variant_key) {
+        setVariant(vRes.variant_key);
       }
+    });
 
-      // 2. Fetch Variant
-      const vRes = await getSirensVariant(levelId, token);
-      if (vRes.variant_key) setVariant(vRes.variant_key);
-
-      // 3. Fetch Team ID & Setup Realtime
-      const tid = await getTeamId();
-      if (tid) {
+    // Fetch Team ID & Setup Realtime Channel asynchronously
+    getTeamId().then(tid => {
+      if (isMounted && tid) {
         setLocalTeamId(tid);
         const channel = supabase.channel(`sirens_${tid}`, {
-          config: { broadcast: { self: true } } // listen to our own broadcasts too just in case
+          config: { broadcast: { self: true } }
         });
         
         channel.on('broadcast', { event: 'update_tray' }, (payload) => {
-          setTray(payload.payload.tray);
+          if (isMounted) setTray(payload.payload.tray);
         }).subscribe();
         
         channelRef.current = channel;
       }
-
-      setLoading(false);
-    }
-    init();
+    });
 
     return () => {
+      isMounted = false;
       if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
   }, [levelId]);
@@ -172,6 +176,19 @@ export function SirensSong({ levelId }: SirensSongProps) {
   return (
     <div className="flex flex-col items-center space-y-6 w-full pb-8 select-none">
       
+      {/* Team Strategy Banner */}
+      <div className="w-full max-w-3xl bg-[#0B121E] border border-gold/30 p-4 rounded-xl shadow-lg relative overflow-hidden flex items-start space-x-3">
+        <div className="w-8 h-8 rounded-full bg-gold/15 border border-gold/40 flex items-center justify-center shrink-0 mt-0.5">
+          <Ear className="w-4 h-4 text-gold" />
+        </div>
+        <div>
+          <p className="text-gold font-serif text-xs uppercase tracking-widest font-bold mb-1">Team Sensory Communication Active</p>
+          <p className="text-parchment/80 font-serif text-sm italic leading-relaxed">
+            Only <strong>one crew member</strong> has clear hearing and sees the true floating melody words (TRUST, NO, SONG), while other devices are deafened (blurred). The hearing sailor must call out the clear words to the crew to form the phrase <strong>TRUST NO SONG</strong>!
+          </p>
+        </div>
+      </div>
+
       {/* Top Status */}
       <div className="w-full max-w-3xl flex justify-between items-end px-2">
         <div className="flex flex-col">
@@ -213,9 +230,7 @@ export function SirensSong({ levelId }: SirensSongProps) {
             <div
               key={b.id}
               onClick={() => handleCapture(b.word, b.isGold)}
-              className={`absolute bottom-[-100px] flex items-center justify-center rounded-full border transition-colors cursor-pointer hover:bg-white/10 ${
-                b.isGold ? 'border-gold/80 bg-gold/5' : 'border-blue-400/30 bg-blue-500/5'
-              }`}
+              className="absolute bottom-[-100px] flex items-center justify-center rounded-full border border-blue-400/25 bg-blue-500/5 transition-colors cursor-pointer hover:bg-white/10 hover:border-gold/50"
               style={{
                 left: `${b.left}%`,
                 width: `${80 * b.size}px`,
@@ -224,9 +239,7 @@ export function SirensSong({ levelId }: SirensSongProps) {
                 animationDelay: `${b.delay}s`,
               }}
             >
-              <span className={`font-serif tracking-widest text-sm md:text-base ${
-                b.isGold ? 'text-gold drop-shadow-[0_0_8px_rgba(201,162,75,1)] font-bold' : 'text-blue-200/50'
-              }`}>
+              <span className="font-serif tracking-widest text-sm md:text-base text-blue-200/75">
                 {b.word}
               </span>
             </div>

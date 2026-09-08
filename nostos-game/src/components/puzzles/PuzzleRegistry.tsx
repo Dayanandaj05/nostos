@@ -10,9 +10,27 @@ import { ScyllaCharybdis } from "@/components/puzzles/ScyllaCharybdis";
 import { CattleOfHelios } from "@/components/puzzles/CattleOfHelios";
 import { ReturnToIthaca } from "@/components/puzzles/ReturnToIthaca";
 
-export function PuzzleRegistry({ level, incorrectCount }: { level: any, incorrectCount: number }) {
+export function PuzzleRegistry({ 
+  level, 
+  incorrectCount,
+  storyText,
+  children
+}: { 
+  level: any, 
+  incorrectCount: number,
+  storyText?: string,
+  children?: React.ReactNode
+}) {
   if (level.puzzle_type === "decoder_wheel") {
-    return <DecoderWheel data={level.puzzle_data} incorrectCount={incorrectCount} />;
+    return (
+      <DecoderWheel 
+        data={level.puzzle_data} 
+        incorrectCount={incorrectCount}
+        storyText={storyText}
+      >
+        {children}
+      </DecoderWheel>
+    );
   }
   
   if (level.puzzle_type === "icon_reveal") {

@@ -12,22 +12,21 @@ interface LaestrygoniansProps {
 }
 
 const QUESTION_BANK = [
-  { q: "Sequence: 2, 4, 8, 16, ?", a: "32" },
-  { q: "Sequence: 1, 1, 2, 3, 5, ?", a: "8" },
-  { q: "Sequence: 10, 9, 7, 4, ?", a: "0" },
-  { q: "Math: 15 * 4", a: "60" },
-  { q: "Math: 144 / 12", a: "12" },
-  { q: "Math: 7 + 8 * 2", a: "23" },
-  { q: "Math: 50 - 12 * 3", a: "14" },
+  { q: "Roman Math: CLXXV - L", a: "125" },
+  { q: "Math: (14 * 6) - (48 / 4)", a: "72" },
+  { q: "Sequence: 100, 96, 88, 72, 40, ?", a: "-24" },
+  { q: "Sequence: 3, 7, 15, 31, ?", a: "63" },
+  { q: "Math: (120 / 5) * 3 - 42", a: "30" },
+  { q: "Roman Math: XCIV + XXVI", a: "120" },
+  { q: "Math: 4² + 3³ - 15", a: "28" },
   { q: "Unscramble: P I S H", a: "SHIP" },
-  { q: "Unscramble: S L I A", a: "SAIL" },
   { q: "Unscramble: C H O A R N", a: "ANCHOR" },
-  { q: "Odd one out: APPLE, BANANA, CARROT, ORANGE", a: "CARROT" },
+  { q: "Odd one out: GALLEY, TRIREME, FRIGATE, CHARIOT", a: "CHARIOT" },
   { q: "Odd one out: ZEUS, POSEIDON, HERCULES, HADES", a: "HERCULES" },
-  { q: "Odd one out: SWORD, SHIELD, SPEAR, BOW", a: "SHIELD" },
-  { q: "Sequence: 3, 6, 12, 24, ?", a: "48" },
-  { q: "Math: (10 + 5) * 2", a: "30" },
-  { q: "Unscramble: E O A C N", a: "OCEAN" }
+  { q: "Odd one out: MAST, RUDDER, ANCHOR, CHARIOT", a: "CHARIOT" },
+  { q: "Sequence: 2, 6, 18, 54, ?", a: "162" },
+  { q: "Math: (85 - 15) / 2 + 18", a: "53" },
+  { q: "Unscramble: T R I R E M E", a: "TRIREME" }
 ];
 
 const TIME_PER_QUESTION = 35;
@@ -35,6 +34,7 @@ const TOTAL_QUESTIONS = 8;
 const REQUIRED_CORRECT = 6;
 
 export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
+  const [hasAcceptedGuidelines, setHasAcceptedGuidelines] = useState(false);
   const [questions, setQuestions] = useState<{q: string, a: string}[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -68,9 +68,9 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
     setLocalInput("");
   };
 
-  // Timer Countdown
+  // Timer Countdown - Only runs after guidelines accepted
   useEffect(() => {
-    if (status !== 'playing') return;
+    if (status !== 'playing' || !hasAcceptedGuidelines) return;
 
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
@@ -85,7 +85,7 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [status, currentIndex]);
+  }, [status, currentIndex, hasAcceptedGuidelines]);
 
   const handleTimeUp = () => {
     processAnswer(false);
@@ -140,6 +140,45 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
   };
 
   if (questions.length === 0) return null;
+
+  if (!hasAcceptedGuidelines) {
+    return (
+      <div className="w-full max-w-2xl mx-auto bg-ink/90 border-2 border-gold/40 p-8 rounded-xl shadow-2xl backdrop-blur-md flex flex-col items-center text-center space-y-6 animate-in zoom-in duration-500">
+        <h3 className="text-2xl text-gold font-serif tracking-widest uppercase border-b border-gold/20 pb-3 w-full">
+          Trial 4 Guidelines & Rules
+        </h3>
+        <p className="text-parchment/90 font-serif text-lg leading-relaxed italic">
+          Giant Laestrygonians are hurling boulders at your ship! You must answer rapid mathematical calculations to steer the ship forward and out of the straits.
+        </p>
+
+        <div className="w-full bg-black/40 border border-gold/20 p-4 rounded-lg space-y-3 text-left font-serif text-sm text-parchment/80">
+          <div className="flex justify-between border-b border-gold/10 pb-2">
+            <span className="text-parchment/60 uppercase tracking-widest">Total Voyage Questions:</span>
+            <span className="text-gold font-bold">8 Questions</span>
+          </div>
+          <div className="flex justify-between border-b border-gold/10 pb-2">
+            <span className="text-parchment/60 uppercase tracking-widest">Required Correct Maneuvers:</span>
+            <span className="text-gold font-bold">6 of 8 Correct</span>
+          </div>
+          <div className="flex justify-between border-b border-gold/10 pb-2">
+            <span className="text-parchment/60 uppercase tracking-widest">Time per Calculation:</span>
+            <span className="text-gold font-bold">35 Seconds</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-parchment/60 uppercase tracking-widest">Ship Forward Movement:</span>
+            <span className="text-gold font-bold">+12% Forward per Correct Answer</span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setHasAcceptedGuidelines(true)}
+          className="w-full py-4 bg-gold/20 hover:bg-gold/30 border-2 border-gold text-gold font-serif text-xl font-bold tracking-widest uppercase rounded shadow-[0_0_20px_rgba(201,162,75,0.4)] hover:shadow-[0_0_30px_rgba(201,162,75,0.8)] transition-all"
+        >
+          I Understand — Begin Voyage →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center space-y-8 w-full select-none pb-8">

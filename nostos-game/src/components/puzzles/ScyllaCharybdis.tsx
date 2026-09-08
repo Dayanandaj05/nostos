@@ -31,14 +31,19 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
     init();
   }, [levelId]);
 
-  const handlePathClick = async (pathKey: string) => {
+  const handlePathClick = (pathKey: string) => {
     if (committedPath || isCommitting) return;
+    // Instant optimistic local UI update (0ms delay)
+    setCommittedPath(pathKey);
     setIsCommitting(true);
-    const result = await commitToPath(levelId, pathKey);
-    if (result.path) {
-      setCommittedPath(result.path);
-    }
-    setIsCommitting(false);
+    
+    // Background sync to server DB
+    commitToPath(levelId, pathKey).then(result => {
+      if (result?.path) setCommittedPath(result.path);
+      setIsCommitting(false);
+    }).catch(() => {
+      setIsCommitting(false);
+    });
   };
 
   const handleLocalSubmit = (e: React.FormEvent) => {

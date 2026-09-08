@@ -45,8 +45,8 @@ export const SEED_LEVELS = [
     title: "Circe's Island",
     story_text: "The sorceress Circe has turned half your crew into swine! Search her opulent hall for the hidden ingredients to counter her spell.",
     puzzle_type: "hidden_object",
-    puzzle_data: { hotspots: [{ id: 1, letter: "P" }, { id: 2, letter: "I" }, { id: 3, letter: "G" }] },
-    correct_answer: "PIG",
+    puzzle_data: { hotspots: [{ id: 1, letter: "M" }, { id: 2, letter: "O" }, { id: 3, letter: "L" }, { id: 4, letter: "Y" }] },
+    correct_answer: "MOLY",
     is_locked: false
   },
   {

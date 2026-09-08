@@ -18,7 +18,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Sparkles } from "lucide-react";
+import { Sparkles, Scissors, Key, Flame, Utensils, CheckCircle2, Wand2 } from "lucide-react";
 
 interface Hotspot {
   id: number;
@@ -32,10 +32,18 @@ interface CircesIslandProps {
   incorrectCount: number;
 }
 
-const HOTSPOT_COORDS = [
-  { cx: 400, cy: 230, r: 50 }, // Hut roof
-  { cx: 550, cy: 370, r: 40 }, // Cauldron/Fire
-  { cx: 180, cy: 380, r: 45 }, // Left rocky outcrop
+const TOOLS = [
+  { id: "sickle", name: "Bronze Sickle", icon: Scissors, targetIdx: 0, hint: "Cut the overgrown magical thorny vines" },
+  { id: "key", name: "Golden Key", icon: Key, targetIdx: 1, hint: "Unlock the entrance to Circe's grand palace" },
+  { id: "torch", name: "Sacred Torch", icon: Flame, targetIdx: 2, hint: "Illuminate the dark marble altar shrine" },
+  { id: "ladle", name: "Magic Ladle", icon: Utensils, targetIdx: 3, hint: "Stir the bubbling crimson elixir cauldron" },
+];
+
+const VISUAL_ELEMENTS = [
+  { id: "bush", cx: 160, cy: 360, r: 50 },
+  { id: "door", cx: 400, cy: 310, r: 45 },
+  { id: "altar", cx: 640, cy: 230, r: 40 },
+  { id: "cauldron", cx: 650, cy: 375, r: 45 },
 ];
 
 function SortableLetter({ id, letter }: { id: string, letter: string }) {
@@ -60,27 +68,36 @@ function SortableLetter({ id, letter }: { id: string, letter: string }) {
       style={style}
       {...attributes}
       {...listeners}
-      className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-ink/90 border-2 ${isDragging ? 'border-gold shadow-[0_0_20px_rgba(201,162,75,0.4)] scale-110' : 'border-gold/40 shadow-[0_0_10px_rgba(201,162,75,0.15)]'} rounded-lg cursor-grab active:cursor-grabbing hover:bg-gold/10 transition-colors touch-none`}
+      className={`w-16 h-16 md:w-22 md:h-22 flex items-center justify-center bg-[#0B121E] border-2 ${isDragging ? 'border-gold shadow-[0_0_25px_rgba(201,162,75,0.6)] scale-110' : 'border-gold/50 shadow-[0_0_15px_rgba(201,162,75,0.2)]'} rounded-xl cursor-grab active:cursor-grabbing hover:bg-gold/15 transition-all touch-none`}
     >
-      <span className="font-serif text-gold text-2xl md:text-3xl font-bold">{letter}</span>
+      <span className="font-serif text-gold text-3xl md:text-4xl font-bold drop-shadow-[0_0_10px_rgba(201,162,75,0.8)]">{letter}</span>
     </div>
   );
 }
 
 export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
-  const [found, setFound] = useState<boolean[]>(data.hotspots.map(() => false));
+  const hotspotsList = data.hotspots && data.hotspots.length === 4 
+    ? data.hotspots 
+    : [
+        { id: 1, letter: "M" },
+        { id: 2, letter: "O" },
+        { id: 3, letter: "L" },
+        { id: 4, letter: "Y" }
+      ];
+
+  const [found, setFound] = useState<boolean[]>(hotspotsList.map(() => false));
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [activeAnimation, setActiveAnimation] = useState<number | null>(null);
   const [tiles, setTiles] = useState<{id: string, letter: string}[]>([]);
   const prevIncorrectCount = useRef(incorrectCount);
 
   // Initialize/reshuffle tiles
   useEffect(() => {
     if (found.every(Boolean) && tiles.length === 0) {
-      // Create tile objects (ID must be unique even if letters aren't, though here P-I-G are unique)
-      const initialTiles = data.hotspots.map(h => ({ id: `tile-${h.id}`, letter: h.letter }));
-      // Shuffle
+      const initialTiles = hotspotsList.map(h => ({ id: `tile-${h.id}`, letter: h.letter }));
       setTiles(initialTiles.sort(() => Math.random() - 0.5));
     }
-  }, [found, data.hotspots, tiles.length]);
+  }, [found, hotspotsList, tiles.length]);
 
   // Reshuffle on incorrect submission
   useEffect(() => {
@@ -101,12 +118,28 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
   }, [tiles, found]);
 
   const handleHotspotClick = (index: number) => {
-    if (!found[index]) {
-      setFound(prev => {
-        const next = [...prev];
-        next[index] = true;
-        return next;
-      });
+    if (found[index]) return;
+
+    if (!selectedTool) {
+      alert("Please select an Equipment Tool from the sidebar first!");
+      return;
+    }
+
+    const currentToolObj = TOOLS.find(t => t.id === selectedTool);
+    if (currentToolObj && currentToolObj.targetIdx === index) {
+      // Trigger action animation
+      setActiveAnimation(index);
+      setTimeout(() => {
+        setFound(prev => {
+          const next = [...prev];
+          next[index] = true;
+          return next;
+        });
+        setActiveAnimation(null);
+        setSelectedTool(null);
+      }, 700);
+    } else {
+      alert(`Invalid Tool Choice! The ${currentToolObj?.name} cannot interact with this object.`);
     }
   };
 
@@ -127,118 +160,206 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-8 w-full select-none pb-8">
+    <div className="flex flex-col items-center space-y-8 w-full max-w-6xl mx-auto select-none pb-8">
       
-      {/* SVG Hidden Object Scene */}
-      <div className="relative w-full max-w-3xl aspect-[16/9] border-2 border-gold/30 rounded-xl overflow-hidden shadow-2xl bg-[#0f172a]">
+      {/* Main Quest Scene & Equipment Bar */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
         
-        <svg viewBox="0 0 800 450" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-          {/* Background Sky */}
-          <rect width="800" height="450" fill="#0f172a" />
-          <circle cx="400" cy="250" r="300" fill="url(#moonGlow)" opacity="0.3" />
+        {/* SVG Interactive Scene (8 cols) */}
+        <div className="lg:col-span-8 relative w-full aspect-[16/9] border-2 border-gold/40 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-[#0A0E17]">
           
-          <defs>
-            <radialGradient id="moonGlow">
-              <stop offset="0%" stopColor="#c9a24b" />
-              <stop offset="100%" stopColor="#0f172a" />
-            </radialGradient>
-            <radialGradient id="cauldronGlow">
-              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-            </radialGradient>
-          </defs>
+          <svg viewBox="0 0 800 450" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0B1325" />
+                <stop offset="100%" stopColor="#1E293B" />
+              </linearGradient>
 
-          {/* Distant Mountains */}
-          <path d="M-100,350 Q100,200 300,350 T700,320 T900,350 L900,450 L-100,450 Z" fill="#1e293b" />
-          
-          {/* Main Island */}
-          <path d="M100,450 Q400,280 700,450 Z" fill="#334155" />
-          <path d="M250,450 Q400,320 550,450 Z" fill="#475569" />
+              <radialGradient id="moonGlow">
+                <stop offset="0%" stopColor="#C9A24B" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#0B1325" stopOpacity="0" />
+              </radialGradient>
 
-          {/* Hut */}
-          <rect x="340" y="270" width="120" height="90" fill="#1e293b" />
-          {/* Door */}
-          <rect x="385" y="310" width="30" height="50" fill="#0f172a" />
-          {/* Roof */}
-          <polygon points="320,270 400,180 480,270" fill="#64748b" />
-          
-          {/* Cauldron/Fire area */}
-          <ellipse cx="550" cy="380" rx="35" ry="15" fill="#0f172a" />
-          <circle cx="550" cy="370" r="50" fill="url(#cauldronGlow)" />
-          {/* Small flames */}
-          <path d="M540,375 Q550,340 555,365 Q560,330 565,370" stroke="#c9a24b" strokeWidth="3" fill="none" />
+              <radialGradient id="potionGlow">
+                <stop offset="0%" stopColor="#EF4444" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#EF4444" stopOpacity="0" />
+              </radialGradient>
 
-          {/* Left Rock Outcrop */}
-          <path d="M120,450 Q180,330 240,450 Z" fill="#1e293b" />
-          
-          {/* Foreground Waves */}
-          <path d="M0,420 Q100,390 200,420 T400,420 T600,420 T800,420 L800,450 L0,450 Z" fill="#0ea5e9" opacity="0.1" />
-          <path d="M-50,435 Q50,410 150,435 T350,435 T550,435 T750,435 T850,435 L850,450 L-50,450 Z" fill="#0ea5e9" opacity="0.2" />
+              <radialGradient id="shrineGlow">
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
+              </radialGradient>
+            </defs>
 
-          {/* Render Hotspots & Found Letters */}
-          {data.hotspots.map((hotspot, i) => {
-            const coords = HOTSPOT_COORDS[i];
-            const isFound = found[i];
-            return (
-              <g key={i}>
-                {isFound ? (
-                  <text 
-                    x={coords.cx} 
-                    y={coords.cy + 15} 
-                    textAnchor="middle" 
-                    fill="#c9a24b" 
-                    fontSize="48" 
-                    fontFamily="serif" 
-                    fontWeight="bold"
-                    className="drop-shadow-[0_0_10px_rgba(201,162,75,0.8)] animate-in zoom-in duration-500"
-                  >
-                    {hotspot.letter}
-                  </text>
-                ) : (
-                  <g>
-                    <circle 
-                      cx={coords.cx} 
-                      cy={coords.cy} 
-                      r={coords.r} 
-                      fill="transparent" 
-                      stroke="#c9a24b"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 4"
-                      className="animate-pulse opacity-40 hover:opacity-100 cursor-pointer transition-opacity"
-                      onClick={() => handleHotspotClick(i)}
-                    />
-                    <circle 
-                      cx={coords.cx} 
-                      cy={coords.cy} 
-                      r={coords.r} 
-                      fill="transparent" 
-                      cursor="pointer"
-                      onClick={() => handleHotspotClick(i)}
-                      className="hover:fill-gold/10 transition-colors"
-                    />
-                  </g>
-                )}
-              </g>
-            );
-          })}
-        </svg>
+            {/* Night Sky Background */}
+            <rect width="800" height="450" fill="url(#skyGrad)" />
+            <circle cx="400" cy="200" r="280" fill="url(#moonGlow)" />
+            
+            {/* Distant Mountains & Cliffs */}
+            <path d="M-50,380 L150,220 L350,380 L550,200 L850,380 L850,450 L-50,450 Z" fill="#111827" />
+            <path d="M50,450 Q300,260 550,450 Z" fill="#1F2937" />
 
-        {/* Instructions overlay */}
-        {!found.every(Boolean) && (
-          <div className="absolute top-4 left-4 bg-ink/80 backdrop-blur-sm border border-gold/30 px-4 py-2 rounded-lg pointer-events-none">
-            <p className="text-parchment/80 font-serif italic text-sm md:text-base flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-gold" />
-              <span>Search the island to uncover the hidden ingredients.</span>
+            {/* Circe's Temple Palace Structure */}
+            <rect x="300" y="220" width="200" height="150" fill="#1E293B" stroke="#334155" strokeWidth="2" />
+            
+            {/* Temple Columns */}
+            <rect x="315" y="240" width="16" height="130" fill="#334155" />
+            <rect x="345" y="240" width="16" height="130" fill="#334155" />
+            <rect x="435" y="240" width="16" height="130" fill="#334155" />
+            <rect x="465" y="240" width="16" height="130" fill="#334155" />
+            <polygon points="280,220 400,140 520,220" fill="#475569" stroke="#C9A24B" strokeWidth="1" />
+
+            {/* Palace Bronze Door (Target 1) */}
+            <rect x="375" y="275" width="50" height="95" fill="#0B121E" stroke="#C9A24B" strokeWidth="2" rx="4" />
+            <circle cx="415" cy="325" r="4" fill="#C9A24B" />
+
+            {/* Marble Altar Shrine (Target 2) */}
+            <path d="M600,270 L680,270 L670,200 L610,200 Z" fill="#334155" stroke="#64748B" strokeWidth="1.5" />
+            <circle cx="640" cy="230" r="35" fill="url(#shrineGlow)" />
+            <polygon points="640,195 648,215 670,215 652,228 658,250 640,236 622,250 628,228 610,215 632,215" fill="#C9A24B" opacity="0.8" />
+
+            {/* Overgrown Thorny Bush Rocks (Target 0) */}
+            <path d="M80,450 Q160,300 240,450 Z" fill="#111827" />
+            <path d="M100,420 Q160,320 220,430" stroke="#15803D" strokeWidth="6" fill="none" />
+            <path d="M120,400 Q170,350 210,410" stroke="#16A34A" strokeWidth="4" fill="none" />
+            <circle cx="140" cy="360" r="4" fill="#C9A24B" />
+            <circle cx="180" cy="340" r="4" fill="#C9A24B" />
+
+            {/* Cauldron Potion Fire (Target 3) */}
+            <circle cx="650" cy="375" r="45" fill="url(#potionGlow)" />
+            <ellipse cx="650" cy="390" rx="38" ry="14" fill="#0B121E" stroke="#C9A24B" strokeWidth="2" />
+            <path d="M635,390 Q650,350 655,380 Q660,340 665,390" stroke="#EF4444" strokeWidth="3" fill="none" />
+
+            {/* Interactive Visual Targets */}
+            {hotspotsList.map((hotspot, i) => {
+              const elem = VISUAL_ELEMENTS[i] || VISUAL_ELEMENTS[0];
+              const isFound = found[i];
+              const isAnimating = activeAnimation === i;
+
+              return (
+                <g key={i} className="cursor-pointer group" onClick={() => handleHotspotClick(i)}>
+                  {isFound ? (
+                    <g className="animate-in zoom-in duration-500">
+                      <circle cx={elem.cx} cy={elem.cy} r={32} fill="#0B121E" stroke="#C9A24B" strokeWidth="2.5" />
+                      <circle cx={elem.cx} cy={elem.cy} r={28} fill="url(#moonGlow)" />
+                      <text 
+                        x={elem.cx} 
+                        y={elem.cy + 11} 
+                        textAnchor="middle" 
+                        fill="#C9A24B" 
+                        fontSize="34" 
+                        fontFamily="serif" 
+                        fontWeight="bold"
+                        className="drop-shadow-[0_0_10px_rgba(201,162,75,0.8)]"
+                      >
+                        {hotspot.letter}
+                      </text>
+                    </g>
+                  ) : (
+                    <g>
+                      <circle 
+                        cx={elem.cx} 
+                        cy={elem.cy} 
+                        r={elem.r} 
+                        fill={selectedTool ? "rgba(201,162,75,0.2)" : "rgba(201,162,75,0.05)"} 
+                        stroke="#C9A24B"
+                        strokeWidth={isAnimating ? "4" : "1.5"}
+                        strokeDasharray={selectedTool ? "4 4" : "none"}
+                        className={`transition-all duration-300 ${
+                          isAnimating 
+                            ? 'animate-ping stroke-gold' 
+                            : 'group-hover:fill-gold/30 group-hover:scale-110'
+                        }`}
+                      />
+                      <circle 
+                        cx={elem.cx} 
+                        cy={elem.cy} 
+                        r={12} 
+                        fill="#C9A24B" 
+                        opacity="0.3"
+                        className="group-hover:opacity-80 transition-opacity"
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Top Instruction Banner */}
+          {!found.every(Boolean) && (
+            <div className="absolute top-4 left-4 right-4 bg-ink/90 backdrop-blur-md border border-gold/40 px-5 py-3 rounded-xl flex items-center justify-between shadow-xl">
+              <p className="text-parchment/90 font-serif italic text-sm flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-gold animate-pulse" />
+                <span>Select an Equipment Tool, then click its matching visual object in Circe's palace!</span>
+              </p>
+              {selectedTool && (
+                <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold bg-gold/15 px-3 py-1 rounded-full border border-gold/30">
+                  Tool Ready: {TOOLS.find(t => t.id === selectedTool)?.name}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Equipment Toolbelt Sidebar (4 cols) */}
+        <div className="lg:col-span-4 bg-[#0B121E]/95 border-2 border-gold/40 p-6 rounded-2xl flex flex-col justify-between backdrop-blur-xl shadow-2xl space-y-4">
+          <div>
+            <h4 className="text-gold font-serif text-lg tracking-widest uppercase border-b border-gold/30 pb-3 font-bold flex items-center justify-between">
+              <span>Equipment Bar</span>
+              <Wand2 className="w-5 h-5 text-gold" />
+            </h4>
+            <p className="text-parchment/60 font-serif text-xs italic mt-2">
+              Equip your tools to break Circe's swine curse:
             </p>
           </div>
-        )}
+
+          <div className="space-y-3 flex-1 flex flex-col justify-center">
+            {TOOLS.map((tool) => {
+              const IconComp = tool.icon;
+              const isSelected = selectedTool === tool.id;
+              const isUsed = found[tool.targetIdx];
+
+              return (
+                <button
+                  key={tool.id}
+                  disabled={isUsed}
+                  onClick={() => setSelectedTool(isSelected ? null : tool.id)}
+                  className={`w-full flex items-center space-x-3 p-3.5 rounded-xl border transition-all text-left ${
+                    isUsed 
+                      ? 'bg-zinc-900/40 border-zinc-800 text-zinc-600 opacity-40 cursor-not-allowed'
+                      : isSelected 
+                        ? 'bg-gold/25 border-gold text-gold shadow-[0_0_20px_rgba(201,162,75,0.4)] scale-102 font-bold' 
+                        : 'bg-ink/80 border-gold/20 text-parchment/80 hover:border-gold/50 hover:bg-gold/10'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? 'bg-gold text-ink' : 'bg-gold/15 text-gold'}`}>
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="font-serif text-xs uppercase tracking-wider font-bold block">{tool.name}</span>
+                    <span className="text-[10px] text-parchment/50 font-serif italic block">{tool.hint}</span>
+                  </div>
+                  {isUsed && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="border-t border-gold/20 pt-3 text-center">
+            <span className="text-gold/70 font-serif text-xs italic">
+              {found.filter(Boolean).length} of 4 Ingredients Unlocked
+            </span>
+          </div>
+        </div>
+
       </div>
 
-      {/* Arrangement Zone */}
+      {/* Letter Drag and Drop Zone */}
       {found.every(Boolean) && (
-        <div className="w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <p className="text-parchment/80 font-serif italic text-lg leading-relaxed text-center mb-6">
-            Arrange the letters to counter the sorceress's spell.
+        <div className="w-full max-w-xl bg-[#0B121E] border-2 border-gold p-8 rounded-2xl shadow-[0_0_50px_rgba(201,162,75,0.3)] flex flex-col items-center animate-in zoom-in duration-500 text-center space-y-4">
+          <p className="text-parchment font-serif italic text-lg leading-relaxed">
+            All ingredients gathered! Drag the letters into order to form the holy antidote:
           </p>
           
           <DndContext 
@@ -247,7 +368,7 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
             onDragEnd={handleDragEnd}
           >
             <SortableContext items={tiles.map(t => t.id)} strategy={horizontalListSortingStrategy}>
-              <div className="flex justify-center space-x-4 p-6 border border-gold/20 rounded-xl bg-ink/30 backdrop-blur-sm">
+              <div className="flex justify-center space-x-4 p-6 border border-gold/30 rounded-xl bg-ink/60 backdrop-blur-sm w-full">
                 {tiles.map((tile) => (
                   <SortableLetter key={tile.id} id={tile.id} letter={tile.letter} />
                 ))}
