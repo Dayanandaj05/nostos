@@ -21,12 +21,12 @@ export default async function PlayPage() {
   const teamId = session.id;
 
   // 1. Fetch team progress with fallback
-  let progress: { current_level: number; incorrect_count: number } | null = null;
+  let progress: { current_level: number; incorrect_count: number; aid_tokens: number; pending_advance: boolean } | null = null;
 
   try {
     const { data, error } = await supabase
       .from("progress")
-      .select("current_level, incorrect_count")
+      .select("current_level, incorrect_count, aid_tokens, pending_advance")
       .eq("team_id", teamId)
       .maybeSingle();
 
@@ -40,7 +40,7 @@ export default async function PlayPage() {
           current_level: 1, 
           first_login_at: new Date().toISOString() 
         }])
-        .select("current_level, incorrect_count")
+        .select("current_level, incorrect_count, aid_tokens, pending_advance")
         .single();
       if (newProgress && !insertErr) progress = newProgress;
     }
@@ -51,7 +51,7 @@ export default async function PlayPage() {
   // If still no progress (e.g. Supabase offline), use mock dev state
   if (!progress) {
     if (!mockDevProgressState[teamId]) {
-      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0 };
+      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3, pending_advance: false };
     }
     progress = mockDevProgressState[teamId];
   }
@@ -184,7 +184,7 @@ export default async function PlayPage() {
       </header>
 
       {/* The Engine */}
-      <GameEngine level={level} incorrectCount={progress.incorrect_count} />
+      <GameEngine level={level} progress={progress} teamId={teamId} username={session.username || "Sailor"} />
 
     </main>
   );

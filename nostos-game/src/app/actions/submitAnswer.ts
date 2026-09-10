@@ -59,7 +59,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   // Fallbacks if Supabase is offline
   if (!progress) {
     if (!mockDevProgressState[teamId]) {
-      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0 };
+      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3, pending_advance: false };
     }
     progress = mockDevProgressState[teamId];
   }
@@ -110,13 +110,12 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   }
 
   if (isCorrect) {
-    const nextLevel = currentLevel + 1;
-    const isCompleted = nextLevel > 10;
+    const isCompleted = currentLevel >= 10;
     
     let dbSuccess = false;
     try {
       const updateData: any = {
-        current_level: nextLevel,
+        pending_advance: true,
         correct_count: (progress.correct_count || 0) + 1,
         last_updated_at: new Date().toISOString(),
       };
@@ -135,10 +134,10 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     }
 
     if (!dbSuccess) {
-      mockDevProgressState[teamId] = {
-        current_level: nextLevel,
-        incorrect_count: progress.incorrect_count || 0
-      };
+      if (!mockDevProgressState[teamId]) {
+        mockDevProgressState[teamId] = { current_level: currentLevel, incorrect_count: 0, aid_tokens: 3, pending_advance: false };
+      }
+      mockDevProgressState[teamId].pending_advance = true;
     }
 
     revalidatePath("/play");
@@ -164,7 +163,9 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     if (!dbSuccess) {
       mockDevProgressState[teamId] = {
         current_level: currentLevel,
-        incorrect_count: newIncorrectCount
+        incorrect_count: newIncorrectCount,
+        aid_tokens: mockDevProgressState[teamId]?.aid_tokens ?? 3,
+        pending_advance: mockDevProgressState[teamId]?.pending_advance ?? false
       };
     }
 

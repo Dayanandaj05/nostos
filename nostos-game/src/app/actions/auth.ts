@@ -27,11 +27,12 @@ async function ensureDeviceToken() {
 }
 
 export async function loginTeam(prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const username = formData.get("username")?.toString().trim();
   const ship_name = formData.get("ship_name")?.toString().trim();
   const password = formData.get("password")?.toString();
 
-  if (!ship_name || !password) {
-    return { success: false, error: "Ship name and password are required." };
+  if (!username || !ship_name || !password) {
+    return { success: false, error: "Username, ship name, and password are required." };
   }
 
   let team: any = null;
@@ -49,8 +50,16 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
     }
     team = data;
   } catch (err) {
-    console.error("Supabase connection failed:", err);
-    return { success: false, error: "The Oracle is offline. Please try again later." };
+    console.warn("Supabase connection failed, checking offline mock teams:", err);
+    
+    const globalForDev = globalThis as unknown as { mockDevTeams?: any[] };
+    if (globalForDev.mockDevTeams) {
+      team = globalForDev.mockDevTeams.find((t: any) => t.ship_name.toLowerCase() === ship_name.toLowerCase());
+    }
+
+    if (!team) {
+      return { success: false, error: "The Oracle is offline and this vessel is not in local memory." };
+    }
   }
 
   if (!team) {
@@ -63,7 +72,7 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   }
 
   // Create session
-  await createSession({ role: "team", id: team.id, ship_name });
+  await createSession({ role: "team", id: team.id, ship_name, username });
   await ensureDeviceToken();
 
   redirect("/play");
@@ -140,7 +149,7 @@ export async function quickLoginTestTeam() {
     console.warn("Supabase local/remote connection unavailable, using fallback dev session for Test Argo:", err);
   }
 
-  await createSession({ role: "team", id: teamId, ship_name: "Test Argo" });
+  await createSession({ role: "team", id: teamId, ship_name: "Test Argo", username: "Dev Tester" });
   await ensureDeviceToken();
   redirect("/play");
 }

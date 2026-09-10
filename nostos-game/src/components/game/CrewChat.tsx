@@ -1,70 +1,43 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { getTeamId } from "@/app/actions/getTeamId";
-import { supabase } from "@/lib/supabase";
-import { MessageSquare, X, Send, Scroll, Sparkles } from "lucide-react";
+import React, { useState, useEffect, useRef, useTransition } from "react";
+import { MessageSquare, X, Send, Scroll, Sparkles, HandHeart, Check } from "lucide-react";
+import { useTeamSync, ChatMessage } from "./TeamSyncProvider";
+import { useAidToken } from "@/app/actions/useAidToken";
 
-interface ChatMessage {
-  id: string;
-  sender: string;
-  text: string;
-  timestamp: string;
-}
-
-export function CrewChat() {
+export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumber: number }) {
+  const { deviceAlias, channelRef, broadcastSystemMessage, broadcastAidProposal } = useTeamSync();
   const [isOpen, setIsOpen] = useState(false);
-  const [teamId, setTeamId] = useState<string | null>(null);
-  const [deviceAlias, setDeviceAlias] = useState<string>("Sailor");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isPendingAid, startTransition] = useTransition();
   
-  const channelRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
+  
+  const deviceAliasRef = useRef(deviceAlias);
+  deviceAliasRef.current = deviceAlias;
+  
+  const isBoundRef = useRef(false);
+
   useEffect(() => {
-    async function initChat() {
-      // 1. Get or generate device token alias
-      let token = localStorage.getItem("nostos_device_token");
-      if (!token) {
-        token = crypto.randomUUID();
-        localStorage.setItem("nostos_device_token", token);
-      }
-      const shortId = token.slice(0, 4).toUpperCase();
-      setDeviceAlias(`Sailor #${shortId}`);
-
-      // 2. Fetch Team ID and setup Realtime
-      const tid = await getTeamId();
-      if (tid) {
-        setTeamId(tid);
-        const channel = supabase.channel(`crew_chat_${tid}`, {
-          config: { broadcast: { self: true } }
-        });
-
-        channel.on('broadcast', { event: 'new_message' }, (payload) => {
-          const newMsg: ChatMessage = payload.payload;
-          setMessages(prev => [...prev, newMsg]);
-          
-          if (!isOpen) {
-            setUnreadCount(prev => prev + 1);
-          }
-        }).subscribe();
-
-        channelRef.current = channel;
-      }
+    if (channelRef && !isBoundRef.current) {
+      isBoundRef.current = true;
+      channelRef.on('broadcast', { event: 'new_message' }, (payload: any) => {
+        const newMsg: ChatMessage = payload.payload;
+        setMessages(prev => [...prev, newMsg]);
+        
+        if (!isOpenRef.current && newMsg.sender !== deviceAliasRef.current) {
+          setUnreadCount(prev => prev + 1);
+        }
+      });
     }
+  }, [channelRef]);
 
-    initChat();
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-    };
-  }, []);
-
-  // Auto scroll to bottom when messages update
+  // Auto scroll
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,30 +45,9 @@ export function CrewChat() {
   }, [messages, isOpen]);
 
   const toggleOpen = () => {
-    if (!isOpen) {
-      setUnreadCount(0);
-    }
+    if (!isOpen) setUnreadCount(0);
     setIsOpen(!isOpen);
   };
-
-  // Load saved messages from sessionStorage on mount
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("nostos_crew_chat_msgs");
-      if (saved) {
-        setMessages(JSON.parse(saved));
-      }
-    } catch (e) {}
-  }, []);
-
-  // Save messages to sessionStorage whenever they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      try {
-        sessionStorage.setItem("nostos_crew_chat_msgs", JSON.stringify(messages));
-      } catch (e) {}
-    }
-  }, [messages]);
 
   const handleSendMessage = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -108,12 +60,10 @@ export function CrewChat() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    // 1. Immediately append to local state so sender sees their own message
     setMessages(prev => [...prev, newMsg]);
 
-    // 2. Broadcast to crew via WebSockets
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (channelRef) {
+      channelRef.send({
         type: 'broadcast',
         event: 'new_message',
         payload: newMsg
@@ -131,17 +81,32 @@ export function CrewChat() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    // 1. Immediately append to local state
     setMessages(prev => [...prev, newMsg]);
-
-    // 2. Broadcast
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (channelRef) {
+      channelRef.send({
         type: 'broadcast',
         event: 'new_message',
         payload: newMsg
       });
     }
+  };
+
+  const handleProposeAid = () => {
+    broadcastAidProposal();
+  };
+
+  const handleApproveAid = async () => {
+    startTransition(async () => {
+      const res = await useAidToken();
+      if (res.success) {
+        // If successful, dynamically import the hint
+        const { getHintForLevel } = await import('@/lib/hints');
+        const hint = getHintForLevel(levelNumber);
+        broadcastSystemMessage(`Aid Token Consumed! The Oracle whispers: "${hint}"`);
+      } else {
+        broadcastSystemMessage(`Aid Request Failed: ${res.error}`);
+      }
+    });
   };
 
   return (
@@ -155,7 +120,7 @@ export function CrewChat() {
         >
           <Scroll className="w-5 h-5 group-hover:rotate-12 transition-transform" />
           <span className="font-serif text-sm tracking-widest uppercase font-bold">
-            Crew Telepathy
+            Crew Chat
           </span>
           {unreadCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-gold text-ink font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center animate-bounce shadow-md">
@@ -176,7 +141,7 @@ export function CrewChat() {
                 <Sparkles className="w-4 h-4 text-gold" />
               </div>
               <div>
-                <h4 className="text-gold font-serif text-sm tracking-widest uppercase font-bold">Crew Telepathy</h4>
+                <h4 className="text-gold font-serif text-sm tracking-widest uppercase font-bold">Crew Chat</h4>
                 <p className="text-parchment/50 font-serif text-xs">Shared Telepathic Parchment</p>
               </div>
             </div>
@@ -189,18 +154,18 @@ export function CrewChat() {
           </div>
 
           {/* Quick Actions Presets */}
-          <div className="bg-ink/40 border-b border-gold/10 px-4 py-2 flex space-x-2 overflow-x-auto text-xs font-serif">
+          <div className="bg-ink/40 border-b border-gold/10 px-4 py-2 flex space-x-2 overflow-x-auto text-xs font-serif scrollbar-none">
             <button 
-              onClick={() => sendPresetMessage("I solved my riddle!")}
+              onClick={() => sendPresetMessage("I solved my part!")}
               className="px-3 py-1 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 rounded-full whitespace-nowrap transition-colors"
             >
-              💡 "I solved my riddle!"
+              💡 "I solved my part!"
             </button>
             <button 
-              onClick={() => sendPresetMessage("What clue do you see?")}
-              className="px-3 py-1 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 rounded-full whitespace-nowrap transition-colors"
+              onClick={() => handleProposeAid()}
+              className="px-3 py-1 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-full whitespace-nowrap transition-colors flex items-center gap-1"
             >
-              ❓ "What do you see?"
+              <HandHeart className="w-3 h-3" /> Use Aid Token
             </button>
           </div>
 
@@ -210,17 +175,43 @@ export function CrewChat() {
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
                 <Scroll className="w-8 h-8 text-gold/30" />
                 <p className="text-parchment/40 font-serif italic text-sm">
-                  No telepathic messages yet. Transmit discovered clues, words, or coordinates to your crew!
+                  No telepathic messages yet. Coordinate your escape!
                 </p>
               </div>
             ) : (
               messages.map((msg) => {
                 const isMe = msg.sender === deviceAlias;
+                
+                if (msg.isSystem) {
+                  return (
+                    <div key={msg.id} className="w-full text-center py-2">
+                      <span className="text-xs font-serif uppercase tracking-widest text-gold/60 border-y border-gold/20 py-1 px-4">
+                        {msg.text}
+                      </span>
+                    </div>
+                  );
+                }
+
+                if (msg.isAidProposal) {
+                  return (
+                    <div key={msg.id} className="w-full my-2 bg-danger/10 border border-danger/30 rounded-xl p-3 flex flex-col items-center text-center space-y-2">
+                      <span className="text-xs font-serif text-danger/80">{msg.sender} proposed using an Aid Token for a hint.</span>
+                      {!isMe && (
+                        <button 
+                          onClick={handleApproveAid}
+                          disabled={isPendingAid}
+                          className="px-4 py-1.5 bg-danger hover:bg-danger/80 text-white text-xs uppercase tracking-widest font-bold rounded flex items-center gap-2"
+                        >
+                          <Check className="w-3 h-3" />
+                          {isPendingAid ? 'Approving...' : 'Approve & Reveal'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
-                  <div 
-                    key={msg.id} 
-                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                  >
+                  <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-[10px] font-serif uppercase tracking-widest text-gold/70 font-bold">
                         {msg.sender}
@@ -249,21 +240,19 @@ export function CrewChat() {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Transmit clue to crew..."
-              className="flex-1 bg-ink/90 border border-gold/30 focus:border-gold px-4 py-2 rounded-xl text-parchment font-serif text-sm outline-none placeholder:text-parchment/30"
+              placeholder="Whisper to your crew..."
+              className="flex-1 bg-ink/50 border border-gold/30 rounded-lg px-4 py-2 text-sm text-parchment font-serif focus:outline-none focus:border-gold placeholder:text-parchment/30"
             />
-            <button
+            <button 
               type="submit"
               disabled={!inputText.trim()}
-              className="p-2.5 bg-gold text-ink rounded-xl font-bold hover:bg-gold/80 disabled:opacity-30 disabled:hover:bg-gold transition-colors"
+              className="p-2 bg-gold text-ink rounded-lg hover:bg-gold/80 disabled:opacity-50 disabled:hover:bg-gold transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
-
         </div>
       )}
-
     </div>
   );
 }

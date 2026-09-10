@@ -98,6 +98,14 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block flex justify-between">
+                  <span>Crew Member Name (Your Alias)</span>
+                  <span className="text-gold/50 italic font-normal">Personal ID</span>
+                </label>
+                <Input name="username" placeholder="e.g. Odysseus, Athena" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block flex justify-between">
                   <span>Secret Crew Cipher (Shared Password)</span>
                   <span className="text-gold/50 italic font-normal">Crew Key</span>
                 </label>

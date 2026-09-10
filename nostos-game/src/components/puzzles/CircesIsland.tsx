@@ -40,10 +40,10 @@ const TOOLS = [
 ];
 
 const VISUAL_ELEMENTS = [
-  { id: "bush", cx: 160, cy: 360, r: 50 },
-  { id: "door", cx: 400, cy: 310, r: 45 },
-  { id: "altar", cx: 640, cy: 230, r: 40 },
-  { id: "cauldron", cx: 650, cy: 375, r: 45 },
+  { id: "bush", cx: 160, cy: 360, r: 50, hitR: 90 },
+  { id: "door", cx: 400, cy: 310, r: 45, hitR: 80 },
+  { id: "altar", cx: 640, cy: 230, r: 40, hitR: 80 },
+  { id: "cauldron", cx: 650, cy: 375, r: 45, hitR: 80 },
 ];
 
 function SortableLetter({ id, letter }: { id: string, letter: string }) {
@@ -121,7 +121,9 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
     if (found[index]) return;
 
     if (!selectedTool) {
-      alert("Please select an Equipment Tool from the sidebar first!");
+      // User clicked without selecting a tool. We animate failure silently instead of blocking alert.
+      setActiveAnimation(index);
+      setTimeout(() => setActiveAnimation(null), 300);
       return;
     }
 
@@ -139,7 +141,12 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
         setSelectedTool(null);
       }, 700);
     } else {
-      alert(`Invalid Tool Choice! The ${currentToolObj?.name} cannot interact with this object.`);
+      // Incorrect tool chosen. Animate failure gently.
+      setActiveAnimation(index);
+      setTimeout(() => {
+        setActiveAnimation(null);
+        setSelectedTool(null);
+      }, 400);
     }
   };
 
@@ -163,10 +170,10 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
     <div className="flex flex-col items-center space-y-8 w-full max-w-6xl mx-auto select-none pb-8">
       
       {/* Main Quest Scene & Equipment Bar */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      <div className="flex flex-col gap-6 w-full">
         
-        {/* SVG Interactive Scene (8 cols) */}
-        <div className="lg:col-span-8 relative w-full aspect-[16/9] border-2 border-gold/40 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-[#0A0E17]">
+        {/* SVG Interactive Scene */}
+        <div className="w-full relative aspect-[16/9] border-2 border-gold/40 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-[#0A0E17]">
           
           <svg viewBox="0 0 800 450" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
             <defs>
@@ -238,6 +245,9 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
 
               return (
                 <g key={i} className="cursor-pointer group" onClick={() => handleHotspotClick(i)}>
+                  {/* Invisible Hitbox to make clicking extremely forgiving */}
+                  <circle cx={elem.cx} cy={elem.cy} r={elem.hitR} fill="transparent" />
+                  
                   {isFound ? (
                     <g className="animate-in zoom-in duration-500">
                       <circle cx={elem.cx} cy={elem.cy} r={32} fill="#0B121E" stroke="#C9A24B" strokeWidth="2.5" />
@@ -285,36 +295,36 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
               );
             })}
           </svg>
-
-          {/* Top Instruction Banner */}
-          {!found.every(Boolean) && (
-            <div className="absolute top-4 left-4 right-4 bg-ink/90 backdrop-blur-md border border-gold/40 px-5 py-3 rounded-xl flex items-center justify-between shadow-xl">
-              <p className="text-parchment/90 font-serif italic text-sm flex items-center space-x-2">
-                <Sparkles className="w-4 h-4 text-gold animate-pulse" />
-                <span>Select an Equipment Tool, then click its matching visual object in Circe's palace!</span>
-              </p>
-              {selectedTool && (
-                <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold bg-gold/15 px-3 py-1 rounded-full border border-gold/30">
-                  Tool Ready: {TOOLS.find(t => t.id === selectedTool)?.name}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Equipment Toolbelt Sidebar (4 cols) */}
-        <div className="lg:col-span-4 bg-[#0B121E]/95 border-2 border-gold/40 p-6 rounded-2xl flex flex-col justify-between backdrop-blur-xl shadow-2xl space-y-4">
-          <div>
-            <h4 className="text-gold font-serif text-lg tracking-widest uppercase border-b border-gold/30 pb-3 font-bold flex items-center justify-between">
-              <span>Equipment Bar</span>
+        {/* Instruction Banner (Moved below SVG) */}
+        {!found.every(Boolean) && (
+          <div className="bg-[#0B121E]/95 border-2 border-gold/40 px-5 py-3 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-xl gap-3 text-center md:text-left w-full">
+            <p className="text-parchment/90 font-serif italic text-sm flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-gold animate-pulse shrink-0" />
+              <span>Select an Equipment Tool, then click its matching visual object in Circe's palace!</span>
+            </p>
+            {selectedTool && (
+              <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold bg-gold/15 px-3 py-1 rounded-full border border-gold/30 shrink-0">
+                Tool Ready: {TOOLS.find(t => t.id === selectedTool)?.name}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Equipment Toolbelt Sidebar */}
+        <div className="w-full bg-[#0B121E]/95 border-2 border-gold/40 p-6 rounded-2xl flex flex-col backdrop-blur-xl shadow-2xl space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gold/30 pb-3 gap-2">
+            <h4 className="text-gold font-serif text-lg tracking-widest uppercase font-bold flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-gold" />
+              <span>Equipment Bar</span>
             </h4>
-            <p className="text-parchment/60 font-serif text-xs italic mt-2">
+            <p className="text-parchment/60 font-serif text-xs italic">
               Equip your tools to break Circe's swine curse:
             </p>
           </div>
 
-          <div className="space-y-3 flex-1 flex flex-col justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
             {TOOLS.map((tool) => {
               const IconComp = tool.icon;
               const isSelected = selectedTool === tool.id;
