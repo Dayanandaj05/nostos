@@ -140,10 +140,12 @@ export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictor
         <div>
           <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold">The Oracle Favors You</span>
           <h2 className="text-3xl md:text-4xl text-parchment font-serif font-bold tracking-wide mt-1">
-            Trial {currentLevelNumber} Completed!
+            {currentLevelNumber === 10 ? "Odyssey Complete!" : `Trial ${currentLevelNumber} Completed!`}
           </h2>
           <p className="text-parchment/70 font-serif italic text-sm mt-1">
-            Your answer was accepted by the gods. Prepare for the next leg of your journey.
+            {currentLevelNumber === 10 
+              ? "You have overcome the final trial. Ithaca is yours."
+              : "Your answer was accepted by the gods. Prepare for the next leg of your journey."}
           </p>
         </div>
 
@@ -151,38 +153,40 @@ export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictor
         <div className="w-full border-t border-gold/30 my-2" />
 
         {/* Next Trial Briefing */}
-        <div className="w-full bg-ink/60 border border-gold/20 p-6 rounded-xl text-left space-y-3 relative">
-          <div className="flex items-center justify-between">
-            <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold flex items-center space-x-1.5">
-              <Compass className="w-4 h-4 text-gold" />
-              <span>Next Destination</span>
-            </span>
-            
-            {nextData.isTeamwork && (
-              <span className="px-3 py-1 bg-gold/20 border border-gold/50 rounded-full text-gold font-serif text-[11px] uppercase tracking-widest font-bold flex items-center space-x-1">
-                <Users className="w-3 h-3" />
-                <span>Teamwork Required</span>
+        {currentLevelNumber < 10 && (
+          <div className="w-full bg-ink/60 border border-gold/20 p-6 rounded-xl text-left space-y-3 relative">
+            <div className="flex items-center justify-between">
+              <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold flex items-center space-x-1.5">
+                <Compass className="w-4 h-4 text-gold" />
+                <span>Next Destination</span>
               </span>
-            )}
-          </div>
+              
+              {nextData.isTeamwork && (
+                <span className="px-3 py-1 bg-gold/20 border border-gold/50 rounded-full text-gold font-serif text-[11px] uppercase tracking-widest font-bold flex items-center space-x-1">
+                  <Users className="w-3 h-3" />
+                  <span>Teamwork Required</span>
+                </span>
+              )}
+            </div>
 
-          <div>
-            <h3 className="text-xl text-gold font-serif font-bold">{nextData.title}</h3>
-            <p className="text-parchment/60 font-serif italic text-xs">{nextData.subtitle}</p>
-          </div>
+            <div>
+              <h3 className="text-xl text-gold font-serif font-bold">{nextData.title}</h3>
+              <p className="text-parchment/60 font-serif italic text-xs">{nextData.subtitle}</p>
+            </div>
 
-          <div className="border-t border-gold/10 pt-3 space-y-2">
-            <p className="text-parchment/80 font-serif text-xs uppercase tracking-widest font-bold">Tactical Guidelines:</p>
-            <ul className="space-y-1.5">
-              {nextData.guidelines.map((g, idx) => (
-                <li key={idx} className="text-parchment/90 font-serif text-sm flex items-start space-x-2">
-                  <span className="text-gold font-bold">►</span>
-                  <span>{g}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="border-t border-gold/10 pt-3 space-y-2">
+              <p className="text-parchment/80 font-serif text-xs uppercase tracking-widest font-bold">Tactical Guidelines:</p>
+              <ul className="space-y-1.5">
+                {nextData.guidelines.map((g, idx) => (
+                  <li key={idx} className="text-parchment/90 font-serif text-sm flex items-start space-x-2">
+                    <span className="text-gold font-bold">►</span>
+                    <span>{g}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action Button */}
         <Button
@@ -193,11 +197,11 @@ export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictor
           {isAdvancing ? (
             <span className="flex items-center space-x-2">
               <Loader2 className="w-6 h-6 animate-spin text-gold" />
-              <span>Setting Sail...</span>
+              <span>{currentLevelNumber === 10 ? "Claiming Ithaca..." : "Setting Sail..."}</span>
             </span>
           ) : (
             <>
-              <span>Set Sail for Trial {nextLevelNumber}</span>
+              <span>{currentLevelNumber === 10 ? "Claim Your Kingdom" : `Set Sail for Trial ${nextLevelNumber}`}</span>
               <ArrowRight className="w-6 h-6" />
             </>
           )}

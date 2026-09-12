@@ -6,7 +6,7 @@ import { TeamSyncProvider } from "@/components/game/TeamSyncProvider";
 import { CrewChat } from "@/components/game/CrewChat";
 import Link from "next/link";
 import { Anchor } from "lucide-react";
-import { SEED_LEVELS, mockDevProgressState } from "@/lib/mockData";
+import { SEED_LEVELS } from "@/lib/mockData";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 export default async function PlayPage({ searchParams }: { searchParams?: Promise<{ level?: string }> }) {
@@ -51,12 +51,12 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     console.warn("Supabase connection unavailable, using local dev progress fallback:", err);
   }
 
-  // If still no progress (e.g. Supabase offline), use mock dev state
   if (!progress) {
-    if (!mockDevProgressState[teamId]) {
-      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3, pending_advance: false };
-    }
-    progress = mockDevProgressState[teamId];
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ink text-parchment">
+        <p>Could not retrieve your progress. <Link href="/login" className="text-gold underline">Try again.</Link></p>
+      </div>
+    );
   }
 
   // Check for level override in query parameter (e.g. /play?level=2)
@@ -67,10 +67,6 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
       currentLevelNumber = overrideLvl;
       progress.current_level = overrideLvl;
       progress.pending_advance = false;
-      if (mockDevProgressState[teamId]) {
-        mockDevProgressState[teamId].current_level = overrideLvl;
-        mockDevProgressState[teamId].pending_advance = false;
-      }
       try {
         await supabase
           .from("progress")

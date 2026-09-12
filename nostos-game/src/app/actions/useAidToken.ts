@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { getTeamId } from "./getTeamId";
-import { mockDevProgressState } from "@/lib/mockData";
+import { SEED_LEVELS } from "@/lib/mockData";
 import { revalidatePath } from "next/cache";
 
 export async function useAidToken() {
@@ -29,12 +29,7 @@ export async function useAidToken() {
     
     return { success: false, error: "No aid tokens remaining." };
   } catch (err) {
-    // Fallback to local dev state
-    if (mockDevProgressState[teamId] && mockDevProgressState[teamId].aid_tokens > 0) {
-      mockDevProgressState[teamId].aid_tokens -= 1;
-      revalidatePath("/play");
-      return { success: true };
-    }
-    return { success: false, error: "No aid tokens remaining." };
+    console.error(`[useAidToken] Unexpected error for team ${teamId}:`, err);
+    return { success: false, error: "Database error" };
   }
 }

@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import { getSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
-import { SEED_LEVELS, mockDevProgressState } from "@/lib/mockData";
+import { SEED_LEVELS } from "@/lib/mockData";
 
 export type SubmitState = {
   success: boolean;
@@ -56,21 +56,12 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     console.warn("Supabase unavailable for answer submission, using dev fallback state:", err);
   }
 
-  // Fallbacks if Supabase is offline
   if (!progress) {
-    if (!mockDevProgressState[teamId]) {
-      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3, pending_advance: false };
-    }
-    progress = mockDevProgressState[teamId];
+    return { success: false, error: "Unable to retrieve your progress. Try again." };
   }
 
   if (!level) {
-    const seed = SEED_LEVELS.find(l => l.level_number === progress!.current_level) || SEED_LEVELS[0];
-    level = {
-      id: seed.id,
-      correct_answer: seed.correct_answer,
-      is_locked: seed.is_locked
-    };
+    return { success: false, error: "Level data not found." };
   }
 
   const currentLevel = progress.current_level;
@@ -142,10 +133,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     }
 
     if (!dbSuccess) {
-      if (!mockDevProgressState[teamId]) {
-        mockDevProgressState[teamId] = { current_level: currentLevel, incorrect_count: 0, aid_tokens: 3, pending_advance: false };
-      }
-      mockDevProgressState[teamId].pending_advance = true;
+      return { success: false, error: "Failed to save your progress." };
     }
 
     revalidatePath("/play");
@@ -169,12 +157,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     }
 
     if (!dbSuccess) {
-      mockDevProgressState[teamId] = {
-        current_level: currentLevel,
-        incorrect_count: newIncorrectCount,
-        aid_tokens: mockDevProgressState[teamId]?.aid_tokens ?? 3,
-        pending_advance: mockDevProgressState[teamId]?.pending_advance ?? false
-      };
+      // Failed to update incorrect count, but continue anyway
     }
 
     return { 

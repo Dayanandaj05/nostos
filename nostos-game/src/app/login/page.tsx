@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { ErrorBanner } from "@/components/ui/ErrorBanner";
-import { loginTeam, loginAdmin, quickLoginTestTeam, quickLoginAdmin } from "@/app/actions/auth";
+import { loginTeam, loginAdmin } from "@/app/actions/auth";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 const GreekKeyLine = () => (
@@ -141,20 +141,7 @@ export default function LoginPage() {
           )}
         </Card>
 
-        {/* Development Quick-Logins */}
-        {process.env.NODE_ENV !== "production" && (
-          <div className="mt-10 p-5 border border-dashed border-gold/30 bg-gold/5 rounded-2xl space-y-3">
-            <p className="text-gold/80 text-[11px] tracking-widest uppercase font-bold text-center">⚡ Development Quick-Access Shortcuts</p>
-            <div className="flex gap-3">
-              <form action={quickLoginTestTeam} className="flex-1">
-                <Button variant="outline" className="w-full text-xs py-2 border-gold/30 text-gold hover:bg-gold/10">Quick Test Team</Button>
-              </form>
-              <form action={quickLoginAdmin} className="flex-1">
-                <Button variant="outline" className="w-full text-xs py-2 border-gold/30 text-gold hover:bg-gold/10">Quick Test Admin</Button>
-              </form>
-            </div>
-          </div>
-        )}
+
 
         <div className="mt-10 text-center">
           <Link href="/register" className="text-parchment/50 hover:text-gold italic text-sm tracking-widest uppercase transition-colors">
