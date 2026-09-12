@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Compass, Sailboat, Sunset, Wind, Anchor } from "lucide-react";
 import {
   DndContext,
@@ -26,6 +26,18 @@ interface AeolusWindsProps {
 }
 
 const ICONS = [Compass, Sailboat, Sunset, Wind, Anchor];
+
+const shuffleArray = (arr: string[]) => {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  if (result.join(" ") === arr.join(" ") && result.length > 1) {
+    [result[0], result[1]] = [result[1], result[0]];
+  }
+  return result;
+};
 
 function SortableTile({ id, word }: { id: string, word: string }) {
   const {
@@ -61,11 +73,13 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
   const [tiles, setTiles] = useState<string[]>([]);
   const prevIncorrectCount = useRef(incorrectCount);
 
+  // Scramble words so flipping coins reveals them in scrambled order
+  const scrambledWords = useMemo(() => shuffleArray(data.words), [data.words]);
+
   // Initialize shuffled tiles once all are revealed
   useEffect(() => {
     if (revealed.every(Boolean) && tiles.length === 0) {
-      const shuffled = [...data.words].sort(() => Math.random() - 0.5);
-      setTiles(shuffled);
+      setTiles(shuffleArray(data.words));
     }
   }, [revealed, data.words, tiles.length]);
 
@@ -73,7 +87,7 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
   useEffect(() => {
     if (incorrectCount > prevIncorrectCount.current) {
       if (tiles.length > 0) {
-        setTiles([...tiles].sort(() => Math.random() - 0.5));
+        setTiles(shuffleArray(tiles));
       }
       prevIncorrectCount.current = incorrectCount;
     }
@@ -128,7 +142,7 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
               Click the golden coins to flip and reveal the hidden winds.
             </p>
             <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-              {data.words.map((word, i) => {
+              {scrambledWords.map((word, i) => {
                 const Icon = ICONS[i % ICONS.length];
                 const isRevealed = revealed[i];
                 return (
@@ -184,3 +198,4 @@ export function AeolusWinds({ data, incorrectCount }: AeolusWindsProps) {
     </div>
   );
 }
+

@@ -23,9 +23,15 @@ export const SEED_LEVELS = [
     id: "mock-lvl-3",
     level_number: 3,
     title: "The Cyclops's Cave",
-    story_text: "Trapped in the cave of Polyphemus! He has rolled a massive boulder over the entrance. You must solve his three riddles to unlock the mechanism holding the rock in place.",
+    story_text: "Trapped in the cave of Polyphemus! He has rolled a massive boulder over the entrance. You must solve his three riddles to unlock the three heavy iron locks holding the stone door in place.",
     puzzle_type: "visual_escape",
-    puzzle_data: { riddles: [{ q: "What is greater than the gods, more evil than the demons, the poor have it, the rich need it, and if you eat it, you will die?", a: "NOTHING" }, { q: "If you are NOTHING to him, what must you call yourself?", a: "NOBODY" }] },
+    puzzle_data: { 
+      riddles: [
+        { q: "What is greater than the gods, more evil than the demons, the poor have it, the rich need it, and if you eat it, you will die?", a: "NOTHING" },
+        { q: "Odysseus sharpened a wooden olive branch to blind Polyphemus in his sleep. What weapon was forged in the fire?", a: "STAKE" },
+        { q: "When the other Cyclopes came to aid Polyphemus and asked who harmed him, what name did Odysseus claim?", a: "NOBODY" }
+      ] 
+    },
     correct_answer: "NOBODY",
     is_locked: false
   },

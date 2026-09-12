@@ -10,18 +10,16 @@ declare global {
 }
 
 // ── Startup probe (runs once on import, server-side only) ──────────────
-// Uses Node's net module to attempt a raw TCP connection with a very short
-// timeout. This completes in <50ms whether the port is open or refused,
-// unlike fetch() which can hang for ~7s on macOS when the port is closed.
 if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production' && !globalThis._nostos_offlineProbed) {
   globalThis._nostos_offlineProbed = true;
+  globalThis._nostos_isOffline = false; // default assume online, fail fast if down
   try {
     const net = require('net');
     const url = new URL(supabaseUrl);
     const port = parseInt(url.port || '54321', 10);
     const host = url.hostname;
 
-    const socket = net.createConnection({ host, port, timeout: 500 });
+    const socket = net.createConnection({ host, port, timeout: 150 });
     socket.on('connect', () => {
       globalThis._nostos_isOffline = false;
       socket.destroy();
@@ -50,8 +48,8 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     if (init?.signal) {
       init.signal.addEventListener('abort', () => controller.abort());
     }
-    // 2-second hard timeout for the rare case the probe hasn't finished yet
-    const timeoutId = setTimeout(() => controller.abort("Forced Timeout"), 2000);
+    // Fast 150ms timeout in dev mode so offline Supabase never hangs page loads
+    const timeoutId = setTimeout(() => controller.abort("Forced Timeout"), 150);
 
     return fetch(input, { ...init, signal: controller.signal })
       .then(res => {
@@ -71,3 +69,4 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: { fetch: customFetch }
 });
+
