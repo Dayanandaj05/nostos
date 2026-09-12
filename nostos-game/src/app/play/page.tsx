@@ -8,7 +8,6 @@ import Link from "next/link";
 import { Anchor } from "lucide-react";
 import { SEED_LEVELS, mockDevProgressState } from "@/lib/mockData";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
-import { LevelSelector } from "@/components/game/LevelSelector";
 
 export default async function PlayPage({ searchParams }: { searchParams?: Promise<{ level?: string }> }) {
   const resolvedParams = searchParams ? await searchParams : undefined;
@@ -201,16 +200,13 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,18,30,0.50)_0%,rgba(11,18,30,0.85)_70%,rgba(6,10,18,0.98)_100%)] pointer-events-none z-0" />
       
       {/* Header Bar */}
-      <header className="w-full max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 mb-12 relative z-10 border-b border-parchment/20 pb-4">
+      <header className="w-full max-w-6xl mx-auto flex justify-between items-center mb-12 relative z-10 border-b border-parchment/20 pb-4">
         <div className="flex items-center gap-4">
           <Anchor className="w-8 h-8 text-gold" />
           <span className="font-serif text-xl tracking-widest text-gold uppercase">{session.ship_name}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-parchment/60 font-serif italic text-sm hidden md:inline">
-            Navigating Trial {currentLevelNumber} of 10
-          </span>
-          <LevelSelector currentLevel={currentLevelNumber} />
+        <div className="text-parchment/60 font-serif italic text-sm">
+          Navigating Trial {currentLevelNumber} of 10
         </div>
       </header>
 
