@@ -2,12 +2,16 @@ import React from "react";
 import { getSession } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { GameEngine } from "@/components/game/GameEngine";
+import { TeamSyncProvider } from "@/components/game/TeamSyncProvider";
+import { CrewChat } from "@/components/game/CrewChat";
 import Link from "next/link";
 import { Anchor } from "lucide-react";
 import { SEED_LEVELS, mockDevProgressState } from "@/lib/mockData";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
+import { LevelSelector } from "@/components/game/LevelSelector";
 
-export default async function PlayPage() {
+export default async function PlayPage({ searchParams }: { searchParams?: Promise<{ level?: string }> }) {
+  const resolvedParams = searchParams ? await searchParams : undefined;
   const session = await getSession();
   
   if (!session || session.role !== "team") {
@@ -56,7 +60,28 @@ export default async function PlayPage() {
     progress = mockDevProgressState[teamId];
   }
 
-  const currentLevelNumber = progress.current_level;
+  // Check for level override in query parameter (e.g. /play?level=2)
+  let currentLevelNumber = progress.current_level;
+  if (resolvedParams?.level) {
+    const overrideLvl = parseInt(resolvedParams.level, 10);
+    if (!isNaN(overrideLvl) && overrideLvl >= 1 && overrideLvl <= 10) {
+      currentLevelNumber = overrideLvl;
+      progress.current_level = overrideLvl;
+      progress.pending_advance = false;
+      if (mockDevProgressState[teamId]) {
+        mockDevProgressState[teamId].current_level = overrideLvl;
+        mockDevProgressState[teamId].pending_advance = false;
+      }
+      try {
+        await supabase
+          .from("progress")
+          .update({ current_level: overrideLvl, pending_advance: false })
+          .eq("team_id", teamId);
+      } catch (e) {
+        // ignore DB error
+      }
+    }
+  }
 
   // 2. Check for game completion
   if (currentLevelNumber > 10) {
@@ -94,42 +119,45 @@ export default async function PlayPage() {
     }
 
     return (
-      <main className="min-h-screen bg-ink text-parchment flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-         {/* Less Intense Animated Ocean Canvas Background */}
-         <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
-           <OceanCanvas />
-         </div>
-         <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
-         
-         <div className="z-10 animate-in slide-in-from-bottom-8 duration-1000 flex flex-col items-center">
-           <Anchor className="w-24 h-24 md:w-32 md:h-32 text-gold mx-auto mb-8 animate-pulse drop-shadow-[0_0_15px_rgba(201,162,75,0.5)]" />
-           <h1 className="text-4xl md:text-7xl font-serif text-gold tracking-widest uppercase mb-4 drop-shadow-[0_0_20px_rgba(201,162,75,0.8)]">Home at Last</h1>
-           <h2 className="text-2xl md:text-4xl font-serif text-parchment/90 tracking-widest uppercase mb-12">The {session.ship_name} has arrived</h2>
-           
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 w-full max-w-4xl bg-[#0B121E]/90 border border-gold/30 p-8 rounded-xl backdrop-blur-md">
-             
-             <div className="flex flex-col items-center space-y-2">
-               <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">Voyage Time</span>
-               <span className="text-3xl font-mono text-gold">{finalTimeStr}</span>
-             </div>
-
-             <div className="flex flex-col items-center space-y-2 border-y md:border-y-0 md:border-x border-gold/20 py-4 md:py-0">
-               <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">The Gods Laughed</span>
-               <span className="text-3xl font-mono text-danger">{progress.incorrect_count} <span className="text-sm">times</span></span>
-             </div>
-
-             <div className="flex flex-col items-center space-y-2">
-               <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">Leaderboard Rank</span>
-               <span className="text-4xl font-serif font-bold text-gold">#{rank}</span>
-             </div>
-
+      <TeamSyncProvider teamId={teamId} username={session.username || "Sailor"}>
+        <main className="min-h-screen bg-ink text-parchment flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+           {/* Less Intense Animated Ocean Canvas Background */}
+           <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
+             <OceanCanvas />
            </div>
+           <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
            
-           <p className="mt-12 text-lg md:text-2xl font-serif italic text-parchment/60 max-w-2xl">
-             You have navigated the trials, bested the gods, and reached the shores of Ithaca. Your legend is eternal.
-           </p>
-         </div>
-      </main>
+           <div className="z-10 animate-in slide-in-from-bottom-8 duration-1000 flex flex-col items-center">
+             <Anchor className="w-24 h-24 md:w-32 md:h-32 text-gold mx-auto mb-8 animate-pulse drop-shadow-[0_0_15px_rgba(201,162,75,0.5)]" />
+             <h1 className="text-4xl md:text-7xl font-serif text-gold tracking-widest uppercase mb-4 drop-shadow-[0_0_20px_rgba(201,162,75,0.8)]">Home at Last</h1>
+             <h2 className="text-2xl md:text-4xl font-serif text-parchment/90 tracking-widest uppercase mb-12">The {session.ship_name} has arrived</h2>
+             
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 w-full max-w-4xl bg-[#0B121E]/90 border border-gold/30 p-8 rounded-xl backdrop-blur-md">
+               
+               <div className="flex flex-col items-center space-y-2">
+                 <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">Voyage Time</span>
+                 <span className="text-3xl font-mono text-gold">{finalTimeStr}</span>
+               </div>
+
+               <div className="flex flex-col items-center space-y-2 border-y md:border-y-0 md:border-x border-gold/20 py-4 md:py-0">
+                 <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">The Gods Laughed</span>
+                 <span className="text-3xl font-mono text-danger">{progress.incorrect_count} <span className="text-sm">times</span></span>
+               </div>
+
+               <div className="flex flex-col items-center space-y-2">
+                 <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">Leaderboard Rank</span>
+                 <span className="text-4xl font-serif font-bold text-gold">#{rank}</span>
+               </div>
+
+             </div>
+             
+             <p className="mt-12 text-lg md:text-2xl font-serif italic text-parchment/60 max-w-2xl">
+               You have navigated the trials, bested the gods, and reached the shores of Ithaca. Your legend is eternal.
+             </p>
+           </div>
+        </main>
+        <CrewChat levelId="finished" levelNumber={10} />
+      </TeamSyncProvider>
     );
   }
 
@@ -166,20 +194,23 @@ export default async function PlayPage() {
   // Render the engine
   return (
     <main className="min-h-screen bg-ink text-parchment selection:bg-gold selection:text-ink flex flex-col p-6 md:p-12 relative overflow-hidden">
-      {/* Less Intense Animated Ocean Canvas Background */}
-      <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
+      {/* Atmospheric Animated Ocean Canvas Background */}
+      <div className="fixed inset-0 opacity-65 pointer-events-none z-0">
         <OceanCanvas />
       </div>
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,18,30,0.50)_0%,rgba(11,18,30,0.85)_70%,rgba(6,10,18,0.98)_100%)] pointer-events-none z-0" />
       
       {/* Header Bar */}
-      <header className="w-full max-w-6xl mx-auto flex justify-between items-center mb-12 relative z-10 border-b border-parchment/20 pb-4">
+      <header className="w-full max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 mb-12 relative z-10 border-b border-parchment/20 pb-4">
         <div className="flex items-center gap-4">
           <Anchor className="w-8 h-8 text-gold" />
           <span className="font-serif text-xl tracking-widest text-gold uppercase">{session.ship_name}</span>
         </div>
-        <div className="text-parchment/60 font-serif italic text-sm">
-          Navigating Trial {currentLevelNumber} of 10
+        <div className="flex items-center gap-4">
+          <span className="text-parchment/60 font-serif italic text-sm hidden md:inline">
+            Navigating Trial {currentLevelNumber} of 10
+          </span>
+          <LevelSelector currentLevel={currentLevelNumber} />
         </div>
       </header>
 

@@ -74,6 +74,10 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
     markDone(true);
   };
 
+  const handleForceAdvance = () => {
+    setAdvancing(true);
+  };
+
   // If everyone is done, we can auto-advance
   React.useEffect(() => {
     if (isEveryoneDone && !advancing) {
@@ -121,7 +125,12 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
           Mark My Part Done
         </Button>
       ) : (
-        <p className="text-gold/80 font-serif italic animate-pulse">Waiting for all hands to confirm...</p>
+        <div className="space-y-4">
+          <p className="text-gold/80 font-serif italic animate-pulse">Waiting for all hands to confirm...</p>
+          <Button onClick={handleForceAdvance} className="w-full py-4 text-xl font-bold bg-gold text-ink hover:bg-gold/90">
+            Set Sail for Trial {levelNumber + 1}
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -138,15 +147,13 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
   // or our local state says so (we solved it).
   const isSolved = progress.pending_advance || state.success;
 
-  // The readiness gate is passed if everyone connected has marked ready.
-  // We require at least 1 person to be connected (which will be true since we connect on mount).
-  const isAllReady = connectedMembers.length > 0 && readyMembers.length === connectedMembers.length;
+  // The readiness gate is passed if everyone connected has marked ready, or during initial connection load.
+  const isAllReady = connectedMembers.length === 0 || readyMembers.length === connectedMembers.length;
 
   if (isSolved) {
     return (
       <div className="w-full">
         <CompletionGate levelNumber={level.level_number} />
-        <CrewChat levelId={level.id} levelNumber={level.level_number} />
       </div>
     );
   }
@@ -155,7 +162,6 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
     return (
       <div className="w-full">
         <ReadinessGate onReady={() => markReady(true)} />
-        <CrewChat levelId={level.id} levelNumber={level.level_number} />
       </div>
     );
   }
@@ -217,12 +223,30 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
         >
           {renderSubmissionForm()}
         </PuzzleRegistry>
-        
-        <CrewChat levelId={level.id} levelNumber={level.level_number} />
       </div>
     );
   }
 
+  // Special Custom Layout for Trial 7: Sirens' Song
+  if (level.puzzle_type === "split_blurred" || level.puzzle_type === "audio_visual" || level.level_number === 7) {
+    return (
+      <div className="w-full max-w-6xl mx-auto space-y-8 relative z-10 animate-in fade-in duration-1000">
+        <h2 className="text-3xl text-gold tracking-widest uppercase border-b border-gold/20 pb-2">
+          Trial {level.level_number}: {level.title}
+        </h2>
+
+        <PuzzleRegistry 
+          level={level} 
+          incorrectCount={currentIncorrectCount} 
+          storyText={level.story_text}
+        >
+          {renderSubmissionForm()}
+        </PuzzleRegistry>
+      </div>
+    );
+  }
+
+  // Standard Original Two-Column Layout (From GitHub)
   return (
     <>
       <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10 animate-in fade-in duration-1000">
@@ -256,7 +280,7 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
             <PuzzleRegistry level={level} incorrectCount={currentIncorrectCount} />
           </div>
 
-          {level.puzzle_type === "progress_bar" ? (
+          {level.puzzle_type === "progress_bar" || level.puzzle_type === "animated_fork" || level.puzzle_type === "visual_escape" || level.puzzle_type === "hidden_object" || level.puzzle_type === "timing_bar" || level.puzzle_type === "audio_visual" ? (
             <form id="oracle-form" ref={formRef} action={formAction} className="hidden">
               <input name="answer" type="hidden" />
             </form>
@@ -266,7 +290,6 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
 
         </div>
       </div>
-      <CrewChat levelId={level.id} levelNumber={level.level_number} />
     </>
   );
 }
@@ -275,6 +298,7 @@ export function GameEngine({ level, progress, teamId, username }: GameEngineProp
   return (
     <TeamSyncProvider teamId={teamId} username={username}>
       <GameEngineInner level={level} progress={progress} teamId={teamId} username={username} />
+      <CrewChat levelId={level.id} levelNumber={level.level_number} />
     </TeamSyncProvider>
   );
 }

@@ -2,9 +2,8 @@
 
 import React, { useState, useRef, useEffect, MouseEvent, TouchEvent } from "react";
 import { Card } from "@/components/ui/Card";
-import { getTeamId } from "@/app/actions/getTeamId";
-import { supabase } from "@/lib/supabase";
-import { Scroll, Check } from "lucide-react";
+import { useTeamSync } from "@/components/game/TeamSyncProvider";
+import { Scroll, Check, Compass } from "lucide-react";
 
 interface DecoderWheelProps {
   data: { scrolls: string[] };
@@ -14,45 +13,20 @@ interface DecoderWheelProps {
 }
 
 export function DecoderWheel({ data, incorrectCount, storyText, children }: DecoderWheelProps) {
+  const [hasAcceptedGuidelines, setHasAcceptedGuidelines] = useState(false);
   const [shift, setShift] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [broadcasted, setBroadcasted] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
-  const channelRef = useRef<any>(null);
 
-  useEffect(() => {
-    async function initChannel() {
-      const tid = await getTeamId();
-      if (tid) {
-        const channel = supabase.channel(`crew_chat_${tid}`, {
-          config: { broadcast: { self: true } }
-        });
-        channel.subscribe();
-        channelRef.current = channel;
-      }
-    }
-    initChannel();
-
-    return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
-    };
-  }, []);
+  const { broadcastChatMessage, deviceAlias } = useTeamSync();
 
   const broadcastShift = () => {
-    if (!channelRef.current) return;
-    let token = localStorage.getItem("nostos_device_token") || "";
-    const shortId = token.slice(0, 4).toUpperCase();
-
-    channelRef.current.send({
-      type: 'broadcast',
-      event: 'new_message',
-      payload: {
-        id: crypto.randomUUID(),
-        sender: `Sailor #${shortId}`,
-        text: `🔮 Decoder Wheel Aligned to Shift: ${shift}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    });
+    const sender = deviceAlias || "Sailor";
+    broadcastChatMessage(
+      `🔮 Decoder Wheel Aligned to Shift: ${shift}`,
+      sender
+    );
 
     setBroadcasted(true);
     setTimeout(() => setBroadcasted(false), 3000);
@@ -124,6 +98,85 @@ export function DecoderWheel({ data, incorrectCount, storyText, children }: Deco
   }, [isDragging]);
 
   const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  if (!hasAcceptedGuidelines) {
+    return (
+      <div className="w-full max-w-3xl mx-auto bg-[#0B121E]/95 border-2 border-gold/50 p-6 md:p-10 rounded-2xl shadow-[0_0_50px_rgba(201,162,75,0.35)] backdrop-blur-xl flex flex-col items-center text-center space-y-6 animate-in zoom-in duration-500 my-4">
+        
+        {/* Header Icon & Title */}
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-16 h-16 rounded-full bg-gold/15 border-2 border-gold flex items-center justify-center text-gold shadow-[0_0_20px_rgba(201,162,75,0.5)]">
+            <Compass className="w-8 h-8 animate-pulse" />
+          </div>
+          <h3 className="text-2xl md:text-4xl text-gold font-serif tracking-widest uppercase border-b border-gold/30 pb-3 w-full font-bold drop-shadow-[0_0_15px_rgba(201,162,75,0.5)]">
+            Odyssey Guidelines & Scoring Rules
+          </h3>
+          <p className="text-parchment/80 font-serif italic text-sm md:text-base">
+            Read carefully, Sailor, before setting sail into the 10 Trials of Nostos.
+          </p>
+        </div>
+
+        {/* Guidelines Grid */}
+        <div className="w-full bg-ink/80 border border-gold/25 p-5 md:p-6 rounded-xl space-y-5 text-left font-serif text-sm text-parchment/90">
+          
+          {/* Rule 1: Read Questions & Hints Carefully */}
+          <div className="flex items-start space-x-3 border-b border-gold/10 pb-4">
+            <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-gold font-bold shrink-0 mt-0.5">
+              1
+            </div>
+            <div>
+              <h4 className="text-gold font-bold uppercase tracking-wider text-base mb-1">
+                Read All Questions & Story Texts Very Carefully
+              </h4>
+              <p className="text-parchment/80 leading-relaxed italic">
+                Hidden clues, riddles, passcodes, and key hints are woven directly into every question and story paragraph. Always read every prompt carefully before attempting your answer.
+              </p>
+            </div>
+          </div>
+
+          {/* Rule 2: Scoring & Mistakes */}
+          <div className="flex items-start space-x-3 border-b border-gold/10 pb-4">
+            <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-gold font-bold shrink-0 mt-0.5">
+              2
+            </div>
+            <div>
+              <h4 className="text-gold font-bold uppercase tracking-wider text-base mb-1">
+                Scoring & Penalty Mechanics
+              </h4>
+              <p className="text-parchment/80 leading-relaxed italic">
+                Your total voyage completion time is tracked. Submitting wrong answers to the Oracle increases your penalty count (<span className="text-danger font-bold">The Gods Laugh</span>), impacting your final leaderboard rank. Accuracy and speed win the voyage!
+              </p>
+            </div>
+          </div>
+
+          {/* Rule 3: Team Communication */}
+          <div className="flex items-start space-x-3">
+            <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-gold font-bold shrink-0 mt-0.5">
+              3
+            </div>
+            <div>
+              <h4 className="text-gold font-bold uppercase tracking-wider text-base mb-1">
+                In-Game Crew Chat Communication
+              </h4>
+              <p className="text-parchment/80 leading-relaxed italic">
+                You can chat directly inside the game using the built-in <strong>Crew Chat</strong> drawer. You do not need to use any other outside mode of communication — everything your shipmates need to solve and share is right here in the game!
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Start Button */}
+        <button
+          onClick={() => setHasAcceptedGuidelines(true)}
+          className="w-full py-4 bg-gold hover:bg-gold-light text-ink font-serif text-xl font-bold tracking-widest uppercase rounded-xl shadow-[0_0_25px_rgba(201,162,75,0.5)] hover:shadow-[0_0_35px_rgba(201,162,75,0.8)] transition-all hover:scale-102 flex items-center justify-center space-x-2"
+        >
+          <span>I Understand — Begin Voyage →</span>
+        </button>
+
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-8 select-none relative">

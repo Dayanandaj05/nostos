@@ -86,9 +86,17 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   let isCorrect = normSubmitted === normTarget;
 
   if (!isCorrect) {
-    if (level.correct_answer === "6_CORRECT" && (normSubmitted === "6" || normSubmitted === "6correct")) {
+    if (level.correct_answer === "NOBODY" || currentLevel === 3) {
+      if (["nobody", "nothing", "noone", "outis", "none"].includes(normSubmitted)) {
+        isCorrect = true;
+      }
+    } else if (level.correct_answer === "6_CORRECT" && (normSubmitted === "6" || normSubmitted === "6correct" || normSubmitted === "six")) {
       isCorrect = true;
-    } else if (level.correct_answer === "DEPENDS_ON_PATH" && (normSubmitted === "5" || normSubmitted === "15" || normSubmitted === "15" || normSubmitted === "dependsonpath")) {
+    } else if (level.correct_answer === "DEPENDS_ON_PATH" && (normSubmitted === "5" || normSubmitted === "15" || normSubmitted === "15" || normSubmitted === "dependsonpath" || normSubmitted === "scylla" || normSubmitted === "charybdis")) {
+      isCorrect = true;
+    } else if (level.correct_answer === "MOLY" && (normSubmitted === "moly" || normSubmitted === "holyherb" || normSubmitted === "herb")) {
+      isCorrect = true;
+    } else if (level.correct_answer === "0" && (normSubmitted === "0" || normSubmitted === "zero" || normSubmitted === "none")) {
       isCorrect = true;
     }
   }

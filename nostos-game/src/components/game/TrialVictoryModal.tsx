@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import { ShieldCheck, ArrowRight, Compass, Users, Sparkles, Award } from "lucide-react";
+import React, { useState } from "react";
+import { ShieldCheck, ArrowRight, Compass, Users, Sparkles, Award, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { confirmAdvance } from "@/app/actions/confirmAdvance";
 
 interface TrialVictoryModalProps {
   currentLevelNumber: number;
@@ -55,7 +56,7 @@ const NEXT_TRIAL_DATA: Record<number, { title: string; subtitle: string; isTeamw
     subtitle: "The Underworld Asymmetric Split",
     isTeamwork: true,
     guidelines: [
-      "👥 TEAMWORK REQUIRED: The Shades assign DIFFERENT riddle fragments to each device on your team.",
+      "TEAMWORK REQUIRED: The Shades assign DIFFERENT riddle fragments to each device on your team.",
       "Use the 'Crew Telepathy' chat at the bottom right to share unlocked word fragments with your crew.",
       "Combine all team fragments to form the full passcode and unlock the Underworld Gate."
     ]
@@ -65,7 +66,7 @@ const NEXT_TRIAL_DATA: Record<number, { title: string; subtitle: string; isTeamw
     subtitle: "Sensory Role Separation",
     isTeamwork: true,
     guidelines: [
-      "👥 TEAMWORK REQUIRED: Only ONE crew member has clear hearing to see the floating melody words.",
+      "TEAMWORK REQUIRED: Only ONE crew member has clear hearing to see the floating melody words.",
       "All other team devices are deafened (blurred screen) by the Sirens' enchanting spell.",
       "The hearing sailor must click clear words to transmit them to the crew's shared tray!"
     ]
@@ -103,12 +104,24 @@ const NEXT_TRIAL_DATA: Record<number, { title: string; subtitle: string; isTeamw
 };
 
 export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictoryModalProps) {
+  const [isAdvancing, setIsAdvancing] = useState(false);
   const nextLevelNumber = currentLevelNumber + 1;
   const nextData = NEXT_TRIAL_DATA[nextLevelNumber] || {
     title: `Trial ${nextLevelNumber}: The Final Horizon`,
     subtitle: "Completion of Nostos",
     isTeamwork: false,
     guidelines: ["Proceed to finish your grand journey."]
+  };
+
+  const handleProceed = async () => {
+    if (isAdvancing) return;
+    setIsAdvancing(true);
+    try {
+      await confirmAdvance();
+    } catch (e) {
+      console.error("[TrialVictoryModal] Error during advance:", e);
+    }
+    onProceed();
   };
 
   return (
@@ -173,11 +186,21 @@ export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictor
 
         {/* Action Button */}
         <Button
-          onClick={onProceed}
-          className="w-full py-4 text-xl font-bold flex items-center justify-center space-x-3 shadow-xl hover:scale-102 transition-transform"
+          onClick={handleProceed}
+          disabled={isAdvancing}
+          className="w-full py-4 text-xl font-bold flex items-center justify-center space-x-3 shadow-xl hover:scale-102 transition-transform cursor-pointer"
         >
-          <span>Set Sail for Trial {nextLevelNumber}</span>
-          <ArrowRight className="w-6 h-6" />
+          {isAdvancing ? (
+            <span className="flex items-center space-x-2">
+              <Loader2 className="w-6 h-6 animate-spin text-gold" />
+              <span>Setting Sail...</span>
+            </span>
+          ) : (
+            <>
+              <span>Set Sail for Trial {nextLevelNumber}</span>
+              <ArrowRight className="w-6 h-6" />
+            </>
+          )}
         </Button>
 
       </div>

@@ -28,6 +28,7 @@ interface TeamSyncContextType {
   markDone: (done: boolean) => void;
   broadcastSystemMessage: (text: string) => void;
   broadcastAidProposal: () => void;
+  broadcastChatMessage: (text: string, customSender?: string) => void;
   channelRef: any;
 }
 
@@ -43,7 +44,7 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
   const [members, setMembers] = useState<SyncMember[]>([]);
   const [deviceToken, setDeviceToken] = useState<string>("");
   const [deviceAlias, setDeviceAlias] = useState<string>("");
-  const [myState, setMyState] = useState({ isReady: false, isDone: false });
+  const [myState, setMyState] = useState({ isReady: true, isDone: false });
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
@@ -55,6 +56,9 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
     setDeviceToken(token);
     const alias = username;
     setDeviceAlias(alias);
+
+    // Reset local state for fresh level mount
+    setMyState({ isReady: true, isDone: false });
 
     const channel = supabase.channel(`crew_chat_${teamId}`, {
       config: {
@@ -76,7 +80,7 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
             connected.push({
               device_token: key,
               alias: presence.alias || "Unknown",
-              isReady: !!presence.isReady,
+              isReady: presence.isReady ?? true,
               isDone: !!presence.isDone
             });
           }
@@ -87,20 +91,20 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
         if (status === 'SUBSCRIBED') {
           await channel.track({
             alias,
-            isReady: false,
+            isReady: true,
             isDone: false
           });
         }
       });
 
-    // Offline fallback: if no members appear after 1 second, assume offline
+    // Offline fallback: if no members appear after 1.5 seconds, assume offline
     const fallbackTimer = setTimeout(() => {
       setMembers(prev => {
         if (prev.length === 0) {
           return [{
             device_token: token,
             alias,
-            isReady: false,
+            isReady: true,
             isDone: false
           }];
         }
@@ -137,36 +141,61 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
   };
 
   const broadcastSystemMessage = (text: string) => {
+    const msg: ChatMessage = {
+      id: crypto.randomUUID(),
+      sender: "SYSTEM",
+      text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSystem: true
+    };
     if (channelRef.current) {
-      const msg: ChatMessage = {
-        id: crypto.randomUUID(),
-        sender: "SYSTEM",
-        text,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSystem: true
-      };
       channelRef.current.send({
         type: 'broadcast',
         event: 'new_message',
         payload: msg
       });
     }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nostos_chat_message', { detail: msg }));
+    }
   };
 
   const broadcastAidProposal = () => {
+    const msg: ChatMessage = {
+      id: crypto.randomUUID(),
+      sender: deviceAlias,
+      text: "I propose we use an Aid Token for a hint!",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAidProposal: true
+    };
     if (channelRef.current) {
-      const msg: ChatMessage = {
-        id: crypto.randomUUID(),
-        sender: deviceAlias,
-        text: "I propose we use an Aid Token for a hint!",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isAidProposal: true
-      };
       channelRef.current.send({
         type: 'broadcast',
         event: 'new_message',
         payload: msg
       });
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nostos_chat_message', { detail: msg }));
+    }
+  };
+
+  const broadcastChatMessage = (text: string, customSender?: string) => {
+    const msg: ChatMessage = {
+      id: crypto.randomUUID(),
+      sender: customSender || deviceAlias || "Sailor",
+      text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'new_message',
+        payload: msg
+      });
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nostos_chat_message', { detail: msg }));
     }
   };
 
@@ -183,6 +212,7 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
       markDone,
       broadcastSystemMessage,
       broadcastAidProposal,
+      broadcastChatMessage,
       channelRef: channelRef.current
     }}>
       {children}

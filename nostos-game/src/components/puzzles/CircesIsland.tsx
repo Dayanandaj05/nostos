@@ -43,7 +43,7 @@ const VISUAL_ELEMENTS = [
   { id: "bush", cx: 160, cy: 360, r: 50, hitR: 90 },
   { id: "door", cx: 400, cy: 310, r: 45, hitR: 80 },
   { id: "altar", cx: 640, cy: 230, r: 40, hitR: 80 },
-  { id: "cauldron", cx: 650, cy: 375, r: 45, hitR: 80 },
+  { id: "cauldron", cx: 640, cy: 375, r: 45, hitR: 80 },
 ];
 
 function SortableLetter({ id, letter }: { id: string, letter: string }) {
@@ -76,77 +76,95 @@ function SortableLetter({ id, letter }: { id: string, letter: string }) {
 }
 
 export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
-  const hotspotsList = data.hotspots && data.hotspots.length === 4 
-    ? data.hotspots 
-    : [
-        { id: 1, letter: "M" },
-        { id: 2, letter: "O" },
-        { id: 3, letter: "L" },
-        { id: 4, letter: "Y" }
-      ];
+  // Mixed up letter arrangement for picture hotspots (never spells M-O-L-Y left to right: O - Y - M - L)
+  const hotspotsList = [
+    { id: 1, letter: "O" }, // Bush (x=160, left)
+    { id: 2, letter: "Y" }, // Door (x=400, center)
+    { id: 3, letter: "M" }, // Altar (x=640, right upper)
+    { id: 4, letter: "L" }  // Cauldron (x=640, right lower)
+  ];
 
   const [found, setFound] = useState<boolean[]>(hotspotsList.map(() => false));
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [activeAnimation, setActiveAnimation] = useState<number | null>(null);
+  const [animatingAction, setAnimatingAction] = useState<{ index: number; type: 'cutting' | 'opening' | 'lighting' | 'mixing' } | null>(null);
   const [tiles, setTiles] = useState<{id: string, letter: string}[]>([]);
+  const [toolHint, setToolHint] = useState<string | null>(null);
   const prevIncorrectCount = useRef(incorrectCount);
 
-  // Initialize/reshuffle tiles
+  // Initialize tiles in a guaranteed scrambled order (NEVER pre-arranged as "MOLY")
   useEffect(() => {
     if (found.every(Boolean) && tiles.length === 0) {
       const initialTiles = hotspotsList.map(h => ({ id: `tile-${h.id}`, letter: h.letter }));
-      setTiles(initialTiles.sort(() => Math.random() - 0.5));
+      let scrambled = [...initialTiles].sort(() => Math.random() - 0.5);
+      if (scrambled.map(t => t.letter).join("") === "MOLY") {
+        scrambled = [initialTiles[1], initialTiles[0], initialTiles[3], initialTiles[2]]; // Guaranteed scrambled: O-M-Y-L
+      }
+      setTiles(scrambled);
     }
   }, [found, hotspotsList, tiles.length]);
 
-  // Reshuffle on incorrect submission
+  // Reshuffle on incorrect answer submit
   useEffect(() => {
     if (incorrectCount > prevIncorrectCount.current) {
       if (tiles.length > 0) {
-        setTiles([...tiles].sort(() => Math.random() - 0.5));
+        let scrambled = [...tiles].sort(() => Math.random() - 0.5);
+        if (scrambled.map(t => t.letter).join("") === "MOLY") {
+          scrambled = [tiles[1], tiles[0], tiles[3], tiles[2]];
+        }
+        setTiles(scrambled);
       }
       prevIncorrectCount.current = incorrectCount;
     }
   }, [incorrectCount, tiles]);
 
-  // Sync arrangement to input field
+  // Sync answer to hidden oracle-form only when arranged
   useEffect(() => {
     const input = document.querySelector('#oracle-form input[name="answer"]') as HTMLInputElement;
-    if (input && found.every(Boolean)) {
-      input.value = tiles.map(t => t.letter).join("");
+    if (input && found.every(Boolean) && tiles.length > 0) {
+      const currentWord = tiles.map(t => t.letter).join("");
+      input.value = currentWord;
     }
   }, [tiles, found]);
 
   const handleHotspotClick = (index: number) => {
-    if (found[index]) return;
+    if (found[index] || animatingAction) return;
 
-    if (!selectedTool) {
-      // User clicked without selecting a tool. We animate failure silently instead of blocking alert.
-      setActiveAnimation(index);
-      setTimeout(() => setActiveAnimation(null), 300);
-      return;
+    // If no tool selected, auto-select matching tool for this object!
+    let activeTool = selectedTool;
+    if (!activeTool) {
+      const matchingTool = TOOLS.find(t => t.targetIdx === index);
+      if (matchingTool) {
+        activeTool = matchingTool.id;
+        setSelectedTool(matchingTool.id);
+      }
     }
 
-    const currentToolObj = TOOLS.find(t => t.id === selectedTool);
+    const currentToolObj = TOOLS.find(t => t.id === activeTool);
     if (currentToolObj && currentToolObj.targetIdx === index) {
-      // Trigger action animation
-      setActiveAnimation(index);
+      setToolHint(null);
+      const actionType = activeTool === 'sickle' ? 'cutting' 
+        : activeTool === 'key' ? 'opening' 
+        : activeTool === 'torch' ? 'lighting' 
+        : 'mixing';
+
+      // Trigger rich custom animation
+      setAnimatingAction({ index, type: actionType });
+
       setTimeout(() => {
         setFound(prev => {
           const next = [...prev];
           next[index] = true;
           return next;
         });
-        setActiveAnimation(null);
+        setAnimatingAction(null);
         setSelectedTool(null);
-      }, 700);
+      }, 1100);
     } else {
-      // Incorrect tool chosen. Animate failure gently.
-      setActiveAnimation(index);
-      setTimeout(() => {
-        setActiveAnimation(null);
-        setSelectedTool(null);
-      }, 400);
+      const requiredTool = TOOLS.find(t => t.targetIdx === index);
+      if (requiredTool) {
+        setToolHint(`Equip the ${requiredTool.name} to interact with this area!`);
+        setTimeout(() => setToolHint(null), 3000);
+      }
     }
   };
 
@@ -169,6 +187,53 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
   return (
     <div className="flex flex-col items-center space-y-8 w-full max-w-6xl mx-auto select-none pb-8">
       
+      {/* Custom Keyframe Styles for Rich Interactive Animations */}
+      <style>{`
+        @keyframes sickleCut {
+          0% { transform: translate(-35px, -35px) rotate(-60deg); opacity: 0; }
+          30% { transform: translate(-10px, -10px) rotate(-15deg); opacity: 1; }
+          70% { transform: translate(25px, 20px) rotate(45deg); opacity: 1; }
+          100% { transform: translate(45px, 35px) rotate(80deg); opacity: 0; }
+        }
+        @keyframes slashLine {
+          0% { stroke-dashoffset: 120; opacity: 0; }
+          40% { stroke-dashoffset: 0; opacity: 1; }
+          100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes keyTurn {
+          0% { transform: rotate(0deg) scale(0.6); opacity: 0; }
+          40% { transform: rotate(0deg) scale(1); opacity: 1; }
+          80% { transform: rotate(90deg) scale(1); opacity: 1; }
+          100% { transform: rotate(90deg) scale(1.1); opacity: 0; }
+        }
+        @keyframes doorSlideLeft {
+          0% { transform: translateX(0px); }
+          100% { transform: translateX(-28px); }
+        }
+        @keyframes doorSlideRight {
+          0% { transform: translateX(0px); }
+          100% { transform: translateX(28px); }
+        }
+        @keyframes torchLightIgnite {
+          0% { transform: translateY(-30px) scale(0.5); opacity: 0; }
+          40% { transform: translateY(0px) scale(1); opacity: 1; }
+          70% { transform: translateY(-10px) scale(1.4); opacity: 1; }
+          100% { transform: translateY(-5px) scale(1); opacity: 0.9; }
+        }
+        @keyframes ladleMixStir {
+          0% { transform: translate(0px, -20px) rotate(0deg); }
+          25% { transform: translate(14px, -10px) rotate(90deg); }
+          50% { transform: translate(0px, 0px) rotate(180deg); }
+          75% { transform: translate(-14px, -10px) rotate(270deg); }
+          100% { transform: translate(0px, -20px) rotate(360deg); }
+        }
+        @keyframes potionSwirl {
+          0% { transform: rotate(0deg) scale(0.8); opacity: 0.5; }
+          50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+          100% { transform: rotate(360deg) scale(1); opacity: 0.8; }
+        }
+      `}</style>
+
       {/* Main Quest Scene & Equipment Bar */}
       <div className="flex flex-col gap-6 w-full">
         
@@ -188,67 +253,201 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
               </radialGradient>
 
               <radialGradient id="potionGlow">
-                <stop offset="0%" stopColor="#EF4444" stopOpacity="0.8" />
+                <stop offset="0%" stopColor="#EF4444" stopOpacity="0.9" />
+                <stop offset="60%" stopColor="#DC2626" stopOpacity="0.4" />
                 <stop offset="100%" stopColor="#EF4444" stopOpacity="0" />
               </radialGradient>
 
               <radialGradient id="shrineGlow">
-                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.6" />
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.8" />
                 <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
+              </radialGradient>
+
+              <radialGradient id="magicLight">
+                <stop offset="0%" stopColor="#A855F7" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#A855F7" stopOpacity="0" />
               </radialGradient>
             </defs>
 
             {/* Night Sky Background */}
             <rect width="800" height="450" fill="url(#skyGrad)" />
-            <circle cx="400" cy="200" r="280" fill="url(#moonGlow)" />
+            <circle cx="400" cy="180" r="280" fill="url(#moonGlow)" />
             
-            {/* Distant Mountains & Cliffs */}
-            <path d="M-50,380 L150,220 L350,380 L550,200 L850,380 L850,450 L-50,450 Z" fill="#111827" />
-            <path d="M50,450 Q300,260 550,450 Z" fill="#1F2937" />
+            {/* Distant Mountains */}
+            <path d="M-50,380 L120,240 L300,380 L520,220 L850,380 L850,450 L-50,450 Z" fill="#0F172A" />
+            <path d="M-20,450 Q250,290 520,450 Z" fill="#1E293B" />
 
             {/* Circe's Temple Palace Structure */}
-            <rect x="300" y="220" width="200" height="150" fill="#1E293B" stroke="#334155" strokeWidth="2" />
-            
-            {/* Temple Columns */}
-            <rect x="315" y="240" width="16" height="130" fill="#334155" />
-            <rect x="345" y="240" width="16" height="130" fill="#334155" />
-            <rect x="435" y="240" width="16" height="130" fill="#334155" />
-            <rect x="465" y="240" width="16" height="130" fill="#334155" />
-            <polygon points="280,220 400,140 520,220" fill="#475569" stroke="#C9A24B" strokeWidth="1" />
+            <rect x="280" y="190" width="240" height="180" fill="#1E293B" stroke="#475569" strokeWidth="2" rx="4" />
+            <polygon points="260,190 400,100 540,190" fill="#334155" stroke="#C9A24B" strokeWidth="2" />
+            <rect x="295" y="210" width="20" height="160" fill="#475569" stroke="#64748B" strokeWidth="1" />
+            <rect x="330" y="210" width="20" height="160" fill="#475569" stroke="#64748B" strokeWidth="1" />
+            <rect x="450" y="210" width="20" height="160" fill="#475569" stroke="#64748B" strokeWidth="1" />
+            <rect x="485" y="210" width="20" height="160" fill="#475569" stroke="#64748B" strokeWidth="1" />
 
-            {/* Palace Bronze Door (Target 1) */}
-            <rect x="375" y="275" width="50" height="95" fill="#0B121E" stroke="#C9A24B" strokeWidth="2" rx="4" />
-            <circle cx="415" cy="325" r="4" fill="#C9A24B" />
+            {/* 1. PALACE BRONZE ENTRANCE DOOR (Target 1 - Key OPENING Animation) */}
+            <g>
+              {/* Outer Arch Frame */}
+              <path d="M360,370 L360,260 Q400,230 440,260 L440,370 Z" fill="#0F172A" stroke="#C9A24B" strokeWidth="2.5" />
+              
+              {/* Inner Glowing Chamber when Opened */}
+              <rect x="365" y="265" width="70" height="105" fill="#F59E0B" opacity={found[1] ? 0.35 : 0.05} />
 
-            {/* Marble Altar Shrine (Target 2) */}
-            <path d="M600,270 L680,270 L670,200 L610,200 Z" fill="#334155" stroke="#64748B" strokeWidth="1.5" />
-            <circle cx="640" cy="230" r="35" fill="url(#shrineGlow)" />
-            <polygon points="640,195 648,215 670,215 652,228 658,250 640,236 622,250 628,228 610,215 632,215" fill="#C9A24B" opacity="0.8" />
+              {/* Double Bronze Doors with Opening Slide Animation */}
+              <g style={found[1] || animatingAction?.index === 1 ? { animation: 'doorSlideLeft 1s forwards' } : {}}>
+                <rect x="365" y="265" width="33" height="105" fill="#78350F" stroke="#B45309" strokeWidth="1.5" rx="2" />
+                <rect x="370" y="275" width="23" height="35" fill="#92400E" stroke="#F59E0B" strokeWidth="1" />
+                <rect x="370" y="325" width="23" height="35" fill="#92400E" stroke="#F59E0B" strokeWidth="1" />
+                {/* Left Door Knob */}
+                <g>
+                  <circle cx="392" cy="318" r="5" fill="#F59E0B" stroke="#78350F" strokeWidth="1.5" />
+                  <rect x="391" y="318" width="2" height="4" fill="#78350F" />
+                </g>
+              </g>
 
-            {/* Overgrown Thorny Bush Rocks (Target 0) */}
-            <path d="M80,450 Q160,300 240,450 Z" fill="#111827" />
-            <path d="M100,420 Q160,320 220,430" stroke="#15803D" strokeWidth="6" fill="none" />
-            <path d="M120,400 Q170,350 210,410" stroke="#16A34A" strokeWidth="4" fill="none" />
-            <circle cx="140" cy="360" r="4" fill="#C9A24B" />
-            <circle cx="180" cy="340" r="4" fill="#C9A24B" />
+              <g style={found[1] || animatingAction?.index === 1 ? { animation: 'doorSlideRight 1s forwards' } : {}}>
+                <rect x="402" y="265" width="33" height="105" fill="#78350F" stroke="#B45309" strokeWidth="1.5" rx="2" />
+                <rect x="407" y="275" width="23" height="35" fill="#92400E" stroke="#F59E0B" strokeWidth="1" />
+                <rect x="407" y="325" width="23" height="35" fill="#92400E" stroke="#F59E0B" strokeWidth="1" />
+                {/* Right Door Knob */}
+                <g>
+                  <circle cx="408" cy="318" r="5" fill="#F59E0B" stroke="#78350F" strokeWidth="1.5" />
+                  <rect x="407" y="318" width="2" height="4" fill="#78350F" />
+                </g>
+              </g>
 
-            {/* Cauldron Potion Fire (Target 3) */}
-            <circle cx="650" cy="375" r="45" fill="url(#potionGlow)" />
-            <ellipse cx="650" cy="390" rx="38" ry="14" fill="#0B121E" stroke="#C9A24B" strokeWidth="2" />
-            <path d="M635,390 Q650,350 655,380 Q660,340 665,390" stroke="#EF4444" strokeWidth="3" fill="none" />
+              {/* OPENING ANIMATION: Golden Key Rotation & Unlock Glow */}
+              {animatingAction?.index === 1 && (
+                <g transform="translate(400, 318)" style={{ animation: 'keyTurn 1s forwards' }}>
+                  <circle cx="0" cy="0" r="25" fill="url(#shrineGlow)" />
+                  <path d="M-12,0 L12,0 M6,-6 L6,6 M10,-4 L10,4" stroke="#F59E0B" strokeWidth="3.5" strokeLinecap="round" />
+                  <circle cx="-12" cy="0" r="5" fill="none" stroke="#F59E0B" strokeWidth="3" />
+                </g>
+              )}
+            </g>
 
-            {/* Interactive Visual Targets */}
+            {/* 2. MARBLE ALTAR SHRINE (Target 2 - Torch LIGHTING Animation) */}
+            <g>
+              {/* Pedestal Base Steps */}
+              <rect x="580" y="250" width="120" height="20" fill="#334155" stroke="#64748B" strokeWidth="1" rx="2" />
+              <rect x="595" y="235" width="90" height="15" fill="#475569" stroke="#64748B" strokeWidth="1" rx="2" />
+              {/* Altar Pillar */}
+              <rect x="610" y="195" width="60" height="40" fill="#1E293B" stroke="#C9A24B" strokeWidth="1.5" />
+              {/* Golden Brazier Vessel */}
+              <path d="M600,195 Q640,210 680,195 L670,180 L610,180 Z" fill="#B45309" stroke="#F59E0B" strokeWidth="1.5" />
+              
+              {/* Shrine Sacred Fire Glow (Lit) */}
+              {(found[2] || animatingAction?.index === 2) && (
+                <g transform="translate(640, 175)">
+                  <circle cx="0" cy="0" r="45" fill="url(#shrineGlow)" />
+                  {/* Fire Flames */}
+                  <path d="M-15,10 Q0,-35 15,10 Q0,0 -15,10 Z" fill="#EF4444" style={{ animation: 'torchLightIgnite 1s infinite alternate' }} />
+                  <path d="M-10,10 Q0,-25 10,10 Q0,2 -10,10 Z" fill="#F59E0B" style={{ animation: 'torchLightIgnite 0.7s infinite alternate' }} />
+                  <path d="M-5,10 Q0,-15 5,10 Z" fill="#FEF08A" />
+                </g>
+              )}
+
+              {/* Star Medallion */}
+              <polygon points="640,165 645,176 657,176 648,184 651,195 640,188 629,195 632,184 623,176 635,176" fill={found[2] ? "#F59E0B" : "#475569"} />
+
+              {/* LIGHTING ANIMATION: Burning Torch Dipping & Flame Sparkles */}
+              {animatingAction?.index === 2 && (
+                <g transform="translate(640, 160)" style={{ animation: 'torchLightIgnite 1s forwards' }}>
+                  <line x1="-20" y1="-30" x2="0" y2="0" stroke="#78350F" strokeWidth="5" strokeLinecap="round" />
+                  <circle cx="0" cy="0" r="14" fill="#F59E0B" />
+                  <circle cx="-5" cy="-5" r="8" fill="#EF4444" />
+                </g>
+              )}
+            </g>
+
+            {/* 3. OVERGROWN THORNY GRASS & BUSHES (Target 0 - Sickle CUTTING Animation) */}
+            <g>
+              {/* Dark Grass Mound Base */}
+              <path d="M40,450 Q160,300 280,450 Z" fill="#064E3B" stroke="#047857" strokeWidth="2" />
+              
+              {/* Lush Green Grass Tufts (Cut down when found) */}
+              <g opacity={found[0] ? 0.35 : 1} style={{ transition: 'opacity 0.8s' }}>
+                <path d="M70,450 Q100,340 120,410 Q140,330 160,400 Q180,320 200,420 Q220,340 250,450 Z" fill="#15803D" />
+                <path d="M80,450 Q110,360 130,420 Q150,350 170,410 Q190,340 210,430 Q230,360 260,450 Z" fill="#16A34A" />
+                <path d="M95,450 Q120,380 140,430 Q165,360 185,420 Q205,370 230,450 Z" fill="#22C55E" opacity="0.9" />
+                <path d="M90,430 Q150,330 220,410" stroke="#14532D" strokeWidth="5" fill="none" strokeLinecap="round" />
+                <path d="M110,410 Q170,340 230,390" stroke="#047857" strokeWidth="4" fill="none" strokeLinecap="round" />
+                <circle cx="125" cy="370" r="5" fill="#A855F7" />
+                <circle cx="165" cy="350" r="6" fill="#F43F5E" />
+              </g>
+
+              {/* CUTTING ANIMATION: Sickle Slash Motion & Cutting Energy Line */}
+              {animatingAction?.index === 0 && (
+                <g>
+                  {/* Slash Line */}
+                  <path 
+                    d="M110,330 L210,390" 
+                    stroke="#F59E0B" 
+                    strokeWidth="6" 
+                    strokeLinecap="round"
+                    strokeDasharray="120"
+                    style={{ animation: 'slashLine 0.9s forwards' }}
+                  />
+                  {/* Swinging Bronze Sickle */}
+                  <g transform="translate(160, 360)" style={{ animation: 'sickleCut 1s forwards' }}>
+                    <path d="M-20,-10 C0,-35 25,-20 15,10 C5,0 -10,-5 -20,-10 Z" fill="#C9A24B" stroke="#78350F" strokeWidth="2" />
+                    <line x1="-20" y1="-10" x2="-35" y2="-25" stroke="#78350F" strokeWidth="4" strokeLinecap="round" />
+                  </g>
+                </g>
+              )}
+            </g>
+
+            {/* 4. WITCH'S POTION CAULDRON & FIRE (Target 3 - Ladle MIXING Animation) */}
+            <g>
+              {/* Ember Log Fire Base */}
+              <path d="M605,420 L675,420 L665,405 L615,405 Z" fill="#451A03" />
+              <circle cx="640" cy="412" r="25" fill="url(#potionGlow)" />
+              <ellipse cx="640" cy="415" rx="30" ry="8" fill="#EA580C" opacity="0.8" />
+              
+              {/* Tripod Iron Legs */}
+              <line x1="610" y1="360" x2="595" y2="425" stroke="#0F172A" strokeWidth="4" />
+              <line x1="670" y1="360" x2="685" y2="425" stroke="#0F172A" strokeWidth="4" />
+              
+              {/* Iron Cauldron Body */}
+              <circle cx="640" cy="375" r="38" fill="#1E293B" stroke="#475569" strokeWidth="2.5" />
+              
+              {/* Potion Rim & Bubbling Crimson/Purple Elixir */}
+              <ellipse cx="640" cy="355" rx="34" ry="12" fill={found[3] ? "#A855F7" : "#991B1B"} stroke="#C9A24B" strokeWidth="2" />
+              <ellipse cx="640" cy="355" rx="30" ry="9" fill={found[3] ? "#C084FC" : "#DC2626"} />
+
+              {/* MIXING ANIMATION: Ladle Stirring & Swirling Potion Bubbles */}
+              {animatingAction?.index === 3 ? (
+                <g transform="translate(640, 355)">
+                  {/* Swirling Potion Effect */}
+                  <ellipse cx="0" cy="0" rx="26" ry="7" fill="url(#magicLight)" style={{ animation: 'potionSwirl 1s infinite' }} />
+                  <circle cx="-10" cy="-2" r="5" fill="#E9D5FF" className="animate-bounce" />
+                  <circle cx="8" cy="2" r="4" fill="#F472B6" className="animate-pulse" />
+                  {/* Stirring Ladle */}
+                  <g style={{ animation: 'ladleMixStir 1s forwards' }}>
+                    <line x1="0" y1="0" x2="15" y2="-35" stroke="#78350F" strokeWidth="4" strokeLinecap="round" />
+                    <circle cx="0" cy="0" r="7" fill="#C9A24B" />
+                  </g>
+                </g>
+              ) : (
+                <g>
+                  <circle cx="630" cy="353" r="3" fill="#EF4444" />
+                  <circle cx="648" cy="357" r="4" fill="#F87171" />
+                  <circle cx="638" cy="352" r="2" fill="#FECACA" />
+                  <circle cx="655" cy="354" r="3" fill="#EF4444" />
+                </g>
+              )}
+            </g>
+
+            {/* UNLOCKED GOLDEN INGREDIENT LETTER MEDALLIONS */}
             {hotspotsList.map((hotspot, i) => {
               const elem = VISUAL_ELEMENTS[i] || VISUAL_ELEMENTS[0];
               const isFound = found[i];
-              const isAnimating = activeAnimation === i;
 
               return (
                 <g key={i} className="cursor-pointer group" onClick={() => handleHotspotClick(i)}>
-                  {/* Invisible Hitbox to make clicking extremely forgiving */}
                   <circle cx={elem.cx} cy={elem.cy} r={elem.hitR} fill="transparent" />
                   
-                  {isFound ? (
+                  {isFound && (
                     <g className="animate-in zoom-in duration-500">
                       <circle cx={elem.cx} cy={elem.cy} r={32} fill="#0B121E" stroke="#C9A24B" strokeWidth="2.5" />
                       <circle cx={elem.cx} cy={elem.cy} r={28} fill="url(#moonGlow)" />
@@ -265,31 +464,6 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
                         {hotspot.letter}
                       </text>
                     </g>
-                  ) : (
-                    <g>
-                      <circle 
-                        cx={elem.cx} 
-                        cy={elem.cy} 
-                        r={elem.r} 
-                        fill={selectedTool ? "rgba(201,162,75,0.2)" : "rgba(201,162,75,0.05)"} 
-                        stroke="#C9A24B"
-                        strokeWidth={isAnimating ? "4" : "1.5"}
-                        strokeDasharray={selectedTool ? "4 4" : "none"}
-                        className={`transition-all duration-300 ${
-                          isAnimating 
-                            ? 'animate-ping stroke-gold' 
-                            : 'group-hover:fill-gold/30 group-hover:scale-110'
-                        }`}
-                      />
-                      <circle 
-                        cx={elem.cx} 
-                        cy={elem.cy} 
-                        r={12} 
-                        fill="#C9A24B" 
-                        opacity="0.3"
-                        className="group-hover:opacity-80 transition-opacity"
-                      />
-                    </g>
                   )}
                 </g>
               );
@@ -297,16 +471,23 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
           </svg>
         </div>
 
-        {/* Instruction Banner (Moved below SVG) */}
+        {/* Instruction Banner */}
         {!found.every(Boolean) && (
           <div className="bg-[#0B121E]/95 border-2 border-gold/40 px-5 py-3 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-xl gap-3 text-center md:text-left w-full">
-            <p className="text-parchment/90 font-serif italic text-sm flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-gold animate-pulse shrink-0" />
-              <span>Select an Equipment Tool, then click its matching visual object in Circe's palace!</span>
-            </p>
+            {toolHint ? (
+              <p className="text-amber-300 font-serif font-bold text-sm flex items-center space-x-2 animate-bounce">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{toolHint}</span>
+              </p>
+            ) : (
+              <p className="text-parchment/90 font-serif italic text-sm flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-gold animate-pulse shrink-0" />
+                <span>Click directly on the palace door knobs or objects to unlock them!</span>
+              </p>
+            )}
             {selectedTool && (
               <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold bg-gold/15 px-3 py-1 rounded-full border border-gold/30 shrink-0">
-                Tool Ready: {TOOLS.find(t => t.id === selectedTool)?.name}
+                Tool Equipped: {TOOLS.find(t => t.id === selectedTool)?.name}
               </span>
             )}
           </div>
@@ -367,9 +548,9 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
 
       {/* Letter Drag and Drop Zone */}
       {found.every(Boolean) && (
-        <div className="w-full max-w-xl bg-[#0B121E] border-2 border-gold p-8 rounded-2xl shadow-[0_0_50px_rgba(201,162,75,0.3)] flex flex-col items-center animate-in zoom-in duration-500 text-center space-y-4">
+        <div className="w-full max-w-xl bg-[#0B121E] border-2 border-gold p-8 rounded-2xl shadow-[0_0_50px_rgba(201,162,75,0.3)] flex flex-col items-center animate-in zoom-in duration-500 text-center space-y-5">
           <p className="text-parchment font-serif italic text-lg leading-relaxed">
-            All ingredients gathered! Drag the letters into order to form the holy antidote:
+            All ingredients gathered! Drag the letters into order to spell the holy antidote:
           </p>
           
           <DndContext 
@@ -385,6 +566,26 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
               </div>
             </SortableContext>
           </DndContext>
+
+          {tiles.map(t => t.letter).join("") === "MOLY" ? (
+            <button
+              onClick={() => {
+                const form = document.getElementById('oracle-form') as HTMLFormElement;
+                if (form) {
+                  const input = form.querySelector('input[name="answer"]') as HTMLInputElement;
+                  if (input) input.value = "MOLY";
+                  if (typeof form.requestSubmit === "function") form.requestSubmit();
+                }
+              }}
+              className="w-full py-3.5 bg-gold hover:bg-gold-light text-ink font-serif text-lg font-bold uppercase tracking-widest rounded-xl shadow-xl transition-all hover:scale-105"
+            >
+              Counter-Spell Ready: Submit MOLY →
+            </button>
+          ) : (
+            <p className="text-gold/60 font-serif text-xs italic tracking-widest uppercase">
+              Current Word: {tiles.map(t => t.letter).join(" - ")} (Arrange to spell MOLY)
+            </p>
+          )}
         </div>
       )}
 

@@ -25,9 +25,20 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
       if (parentForm) {
         const input = parentForm.querySelector('input[name="answer"]') as HTMLInputElement;
         if (input) {
-          input.value = "NOBODY";
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+          if (nativeInputValueSetter) {
+            nativeInputValueSetter.call(input, "NOBODY");
+          } else {
+            input.value = "NOBODY";
+          }
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
         }
-        parentForm.requestSubmit();
+        if (typeof parentForm.requestSubmit === "function") {
+          parentForm.requestSubmit();
+        } else if (typeof (parentForm as any).submit === "function") {
+          (parentForm as any).submit();
+        }
       }
     }, 1200);
   };
@@ -41,7 +52,13 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
 
     if (!userEntered) return;
 
-    if (userEntered === currentTarget || userEntered.includes(currentTarget)) {
+    const isMatch =
+      userEntered === currentTarget ||
+      userEntered.includes(currentTarget) ||
+      (step === 0 && (userEntered.includes("NOTHING") || userEntered.includes("NOBODY") || userEntered.includes("NONE"))) ||
+      (step === 1 && (userEntered.includes("NOBODY") || userEntered.includes("NOTHING") || userEntered.includes("NOONE") || userEntered.includes("OUTIS")));
+
+    if (isMatch) {
       setError(false);
       setLocalInput("");
       const nextStep = step + 1;

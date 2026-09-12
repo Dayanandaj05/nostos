@@ -54,7 +54,14 @@ export function PuzzleRegistry({
   }
 
   if (level.puzzle_type === "split_blurred") {
-    return <SirensSong levelId={level.id} />;
+    return (
+      <SirensSong 
+        levelId={level.id} 
+        storyText={storyText}
+      >
+        {children}
+      </SirensSong>
+    );
   }
 
   if (level.puzzle_type === "animated_fork") {
@@ -66,7 +73,7 @@ export function PuzzleRegistry({
   }
 
   if (level.puzzle_type === "timing_bar") {
-    return <ReturnToIthaca data={level.puzzle_data} />;
+    return <ReturnToIthaca data={level.puzzle_data} storyText={storyText} />;
   }
 
   // Fallback for unimplemented puzzles

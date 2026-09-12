@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Ship, Skull } from "lucide-react";
+import { Ship, Skull, Sparkles, CheckCircle2, RotateCcw } from "lucide-react";
 
 interface LaestrygoniansProps {
   data: {
@@ -11,6 +11,7 @@ interface LaestrygoniansProps {
   incorrectCount: number;
 }
 
+// 15 Original Questions
 const QUESTION_BANK = [
   { q: "Roman Math: CLXXV - L", a: "125" },
   { q: "Math: (14 * 6) - (48 / 4)", a: "72" },
@@ -23,11 +24,21 @@ const QUESTION_BANK = [
   { q: "Unscramble: C H O A R N", a: "ANCHOR" },
   { q: "Odd one out: GALLEY, TRIREME, FRIGATE, CHARIOT", a: "CHARIOT" },
   { q: "Odd one out: ZEUS, POSEIDON, HERCULES, HADES", a: "HERCULES" },
-  { q: "Odd one out: MAST, RUDDER, ANCHOR, CHARIOT", a: "CHARIOT" },
+  { q: "Odd one out: MAST, RUDDER, ANCHOR, SPEAR", a: "SPEAR" },
   { q: "Sequence: 2, 6, 18, 54, ?", a: "162" },
   { q: "Math: (85 - 15) / 2 + 18", a: "53" },
   { q: "Unscramble: T R I R E M E", a: "TRIREME" }
 ];
+
+// True Fisher-Yates Shuffle algorithm for uniform non-repeating selection
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 const TIME_PER_QUESTION = 35;
 const TOTAL_QUESTIONS = 8;
@@ -45,7 +56,47 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initial Shuffle
+  // Retrieve previously answered/seen questions from localStorage for this user
+  const getSeenQuestionKeys = (): string[] => {
+    try {
+      const raw = localStorage.getItem("nostos_t4_seen_q");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveSeenQuestionKeys = (keys: string[]) => {
+    try {
+      localStorage.setItem("nostos_t4_seen_q", JSON.stringify(keys));
+    } catch {
+      // ignore
+    }
+  };
+
+  // Draw 8 strictly non-repeating questions for the current user
+  const drawQuestionsForUser = (count: number) => {
+    let seenList = getSeenQuestionKeys();
+    let available = QUESTION_BANK.filter(item => !seenList.includes(item.q));
+
+    // If remaining unseen questions are fewer than count (8), reset the seen list
+    if (available.length < count) {
+      seenList = [];
+      available = [...QUESTION_BANK];
+    }
+
+    // Fisher-Yates shuffle the available pool
+    const shuffled = shuffleArray(available);
+    const selected = shuffled.slice(0, count);
+
+    // Persist new seen questions so they won't repeat for this user until all 15 are exhausted
+    const newSeen = [...seenList, ...selected.map(item => item.q)];
+    saveSeenQuestionKeys(newSeen);
+
+    return selected;
+  };
+
+  // Initial setup
   useEffect(() => {
     startNewGame();
     // Hide the main form initially
@@ -54,12 +105,13 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
     
     return () => {
       if (form) form.style.display = 'block';
-    }
+    };
   }, []);
 
   const startNewGame = () => {
-    const shuffled = [...QUESTION_BANK].sort(() => Math.random() - 0.5).slice(0, TOTAL_QUESTIONS);
-    setQuestions(shuffled);
+    // Select 8 questions without any repetition for this user
+    const selectedQuestions = drawQuestionsForUser(TOTAL_QUESTIONS);
+    setQuestions(selectedQuestions);
     setCurrentIndex(0);
     setCorrectCount(0);
     setTimeLeft(TIME_PER_QUESTION);
@@ -134,7 +186,7 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
         // Auto submit after a short delay to let them see the victory state
         setTimeout(() => {
           form.requestSubmit();
-        }, 2000);
+        }, 1800);
       }
     }
   };
@@ -148,13 +200,13 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
           Trial 4 Guidelines & Rules
         </h3>
         <p className="text-parchment/90 font-serif text-lg leading-relaxed italic">
-          Giant Laestrygonians are hurling boulders at your ship! You must answer rapid mathematical calculations to steer the ship forward and out of the straits.
+          Giant Laestrygonians are hurling boulders at your ship! You must answer rapid mathematical & navigation calculations to steer the ship forward out of the straits.
         </p>
 
         <div className="w-full bg-black/40 border border-gold/20 p-4 rounded-lg space-y-3 text-left font-serif text-sm text-parchment/80">
           <div className="flex justify-between border-b border-gold/10 pb-2">
             <span className="text-parchment/60 uppercase tracking-widest">Total Voyage Questions:</span>
-            <span className="text-gold font-bold">8 Questions</span>
+            <span className="text-gold font-bold">8 Unique Questions</span>
           </div>
           <div className="flex justify-between border-b border-gold/10 pb-2">
             <span className="text-parchment/60 uppercase tracking-widest">Required Correct Maneuvers:</span>
@@ -210,7 +262,7 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
       </div>
 
       {/* Main Game Area */}
-      <div className="w-full max-w-lg bg-ink/80 border border-gold/30 p-6 shadow-2xl backdrop-blur-md relative overflow-hidden min-h-[220px] flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg bg-ink/80 border border-gold/30 p-6 shadow-2xl backdrop-blur-md relative overflow-hidden min-h-[220px] flex flex-col items-center justify-center rounded-xl">
         
         {status === 'playing' && (
           <div className="w-full flex flex-col items-center space-y-6 animate-in fade-in">
@@ -240,7 +292,7 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
               </span>
             </div>
 
-            <p className="text-xl text-center text-parchment/90 font-serif">
+            <p className="text-xl text-center text-parchment/90 font-serif font-semibold px-2">
               {questions[currentIndex].q}
             </p>
 
@@ -251,11 +303,12 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
                 onChange={e => setLocalInput(e.target.value)}
                 autoFocus
                 autoComplete="off"
+                placeholder="Enter answer..."
                 className="flex-1 bg-ink/50 border border-gold/30 focus:border-gold/80 px-4 py-3 rounded text-parchment outline-none font-serif uppercase tracking-widest text-center"
               />
               <button 
                 type="submit"
-                className="px-6 py-3 bg-gold/10 hover:bg-gold/20 border border-gold/50 rounded text-gold uppercase tracking-widest transition-colors"
+                className="px-6 py-3 bg-gold/20 hover:bg-gold/30 border border-gold text-gold uppercase tracking-widest font-serif font-bold rounded transition-colors"
               >
                 Fire
               </button>
@@ -287,9 +340,10 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
             </div>
             <button 
               onClick={startNewGame}
-              className="px-8 py-3 bg-danger/10 hover:bg-danger/20 border border-danger/50 rounded text-danger uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(220,38,38,0.2)]"
+              className="flex items-center space-x-2 px-8 py-3 bg-danger/20 hover:bg-danger/30 border border-danger/60 rounded text-danger uppercase tracking-widest font-serif font-bold transition-all shadow-[0_0_15px_rgba(220,38,38,0.3)]"
             >
-              Restart Trial
+              <RotateCcw className="w-4 h-4" />
+              <span>Restart Trial</span>
             </button>
           </div>
         )}

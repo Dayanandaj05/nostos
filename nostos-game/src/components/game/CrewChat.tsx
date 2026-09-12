@@ -8,12 +8,29 @@ import { useAidToken } from "@/app/actions/useAidToken";
 export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumber: number }) {
   const { deviceAlias, channelRef, broadcastSystemMessage, broadcastAidProposal } = useTeamSync();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("nostos_crew_chat_history");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
   const [inputText, setInputText] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPendingAid, startTransition] = useTransition();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Sync messages to localStorage whenever chat messages update
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("nostos_crew_chat_history", JSON.stringify(messages));
+      } catch (e) {}
+    }
+  }, [messages]);
 
   const isOpenRef = useRef(isOpen);
   isOpenRef.current = isOpen;
@@ -24,17 +41,41 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
   const isBoundRef = useRef(false);
 
   useEffect(() => {
+    // 1. Remote Supabase Broadcast Listener
     if (channelRef && !isBoundRef.current) {
       isBoundRef.current = true;
       channelRef.on('broadcast', { event: 'new_message' }, (payload: any) => {
         const newMsg: ChatMessage = payload.payload;
-        setMessages(prev => [...prev, newMsg]);
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
         
-        if (!isOpenRef.current && newMsg.sender !== deviceAliasRef.current) {
+        // Auto-open chat window for transmitted puzzle fragments
+        if (newMsg.text && (newMsg.text.includes("Unlocked Underworld Fragment") || newMsg.text.includes("Decoder Wheel") || newMsg.text.includes("Fragment"))) {
+          setIsOpen(true);
+        } else if (!isOpenRef.current && newMsg.sender !== deviceAliasRef.current) {
           setUnreadCount(prev => prev + 1);
         }
       });
     }
+
+    // 2. Local Event Listener for Transmitted Messages
+    const handleLocalMsg = (e: any) => {
+      const newMsg: ChatMessage = e.detail;
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
+
+      // Auto-open chat window so transmitted fragments are immediately visible!
+      setIsOpen(true);
+    };
+
+    window.addEventListener('nostos_chat_message', handleLocalMsg);
+    return () => {
+      window.removeEventListener('nostos_chat_message', handleLocalMsg);
+    };
   }, [channelRef]);
 
   // Auto scroll
@@ -159,7 +200,7 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
               onClick={() => sendPresetMessage("I solved my part!")}
               className="px-3 py-1 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 rounded-full whitespace-nowrap transition-colors"
             >
-              💡 "I solved my part!"
+              "I solved my part!"
             </button>
             <button 
               onClick={() => handleProposeAid()}

@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { getVariant } from "@/app/actions/getVariant";
-import { getTeamId } from "@/app/actions/getTeamId";
-import { supabase } from "@/lib/supabase";
+import { useTeamSync } from "@/components/game/TeamSyncProvider";
 import { Loader2, Scroll, Check } from "lucide-react";
 
 interface LandOfTheDeadProps {
@@ -19,13 +18,16 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
   const [loading, setLoading] = useState(true);
   const [solved, setSolved] = useState(false);
   const [broadcasted, setBroadcasted] = useState(false);
-  const channelRef = useRef<any>(null);
+
+  const { broadcastChatMessage, deviceAlias } = useTeamSync();
   
   // Local state for the mini-puzzles
   const [riddleInput, setRiddleInput] = useState("");
   const [patternClicks, setPatternClicks] = useState<number[]>([]);
   
   useEffect(() => {
+    let isMounted = true;
+
     async function initVariant() {
       // 1. Get or create a device token in localStorage
       let token = localStorage.getItem("nostos_device_token");
@@ -33,51 +35,60 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
         token = crypto.randomUUID();
         localStorage.setItem("nostos_device_token", token);
       }
-      const shortId = token.slice(0, 4).toUpperCase();
 
-      // 2. Fetch assignment from server
-      const result = await getVariant(levelId, token, data.variants);
-      if (result && result.variant_key) {
-        setVariant(result.variant_key);
-      } else {
-        setVariant(data.variants ? data.variants[0] : "THE");
+      const variantsList = data.variants && data.variants.length > 0 ? data.variants : ["THE", "ROAD", "HOME"];
+
+      // 2. Check cached variant in localStorage for instant 0ms load
+      const cached = localStorage.getItem(`nostos_variant_${levelId}`);
+      if (cached && variantsList.includes(cached)) {
+        if (isMounted) {
+          setVariant(cached);
+          setLoading(false);
+        }
+        return;
       }
 
-      // 3. Setup Supabase Realtime Channel
-      const tid = await getTeamId();
-      if (tid) {
-        const channel = supabase.channel(`crew_chat_${tid}`, {
-          config: { broadcast: { self: true } }
-        });
-        channel.subscribe();
-        channelRef.current = channel;
+      // 3. Instant deterministic fallback based on token hash (< 5ms load time)
+      let hash = 0;
+      for (let i = 0; i < token.length; i++) hash = (hash << 5) - hash + token.charCodeAt(i);
+      const instantFallback = variantsList[Math.abs(hash) % variantsList.length];
+
+      if (isMounted) {
+        setVariant(instantFallback);
+        setLoading(false);
       }
 
-      setLoading(false);
+      // 4. Background fetch server assignment if available
+      try {
+        const result = await Promise.race([
+          getVariant(levelId, token, variantsList),
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 600))
+        ]);
+
+        if (result && result.variant_key && isMounted) {
+          setVariant(result.variant_key);
+          localStorage.setItem(`nostos_variant_${levelId}`, result.variant_key);
+        }
+      } catch {
+        // Silently use instant fallback
+      }
     }
 
     initVariant();
 
     return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      isMounted = false;
     };
   }, [levelId, data.variants]);
 
   const broadcastFragment = () => {
-    if (!variant || !channelRef.current) return;
-    let token = localStorage.getItem("nostos_device_token") || "";
-    const shortId = token.slice(0, 4).toUpperCase();
+    if (!variant) return;
 
-    channelRef.current.send({
-      type: 'broadcast',
-      event: 'new_message',
-      payload: {
-        id: crypto.randomUUID(),
-        sender: `Sailor #${shortId}`,
-        text: `🗝️ Unlocked Underworld Fragment: "${variant}" (Coordinates: Lat 38°N, Long 23°E)`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    });
+    const sender = deviceAlias || "Sailor";
+    broadcastChatMessage(
+      `Unlocked Underworld Fragment: "${variant}" (Coordinates: Lat 38°N, Long 23°E)`,
+      sender
+    );
 
     setBroadcasted(true);
     setTimeout(() => setBroadcasted(false), 4000);
@@ -184,7 +195,8 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
             <div className="space-y-6 flex flex-col items-center">
               <h4 className="text-gold font-serif text-xl tracking-widest uppercase text-center border-b border-gold/20 pb-2 w-full">Shade of the Key</h4>
               <p className="text-parchment/80 font-serif text-center italic text-base">
-                "Decode the Underworld cipher: <span className="text-gold font-mono font-bold">H - O - M - E</span>"
+                "Decode the Underworld cipher: <span className="text-gold font-mono font-bold tracking-widest">I - P - N - F</span> <br />
+                <span className="text-xs text-gold/70 font-sans font-normal">(Shift each letter back by 1 position in the alphabet)</span>"
               </p>
               <form onSubmit={handleRiddleSubmit} className="w-full flex space-x-2">
                 <input 
@@ -227,7 +239,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
           </button>
 
           <p className="mt-6 text-parchment/60 text-sm font-serif text-center">
-            Share this with your crew. Combine your fragments ("THE ROAD HOME") and speak the full truth to the Oracle below.
+            Share this fragment with your crew. Combine all unlocked Underworld fragments from your team members and speak the full truth to the Oracle below.
           </p>
         </div>
       )}
