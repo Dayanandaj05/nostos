@@ -117,7 +117,7 @@ export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictor
     if (isAdvancing) return;
     setIsAdvancing(true);
     try {
-      await confirmAdvance();
+      await confirmAdvance(currentLevelNumber);
     } catch (e) {
       console.error("[TrialVictoryModal] Error during advance:", e);
     }

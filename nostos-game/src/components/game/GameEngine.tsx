@@ -93,10 +93,10 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
     if (isEveryoneDone && !advancing) {
       setAdvancing(true);
       startTransition(async () => {
-        await confirmAdvance();
+        await confirmAdvance(levelNumber);
       });
     }
-  }, [isEveryoneDone, advancing]);
+  }, [isEveryoneDone, advancing, levelNumber]);
 
   if (advancing) {
     return <TrialVictoryModal currentLevelNumber={levelNumber} onProceed={() => { /* Transition handled by realtime router.refresh */ }} />;

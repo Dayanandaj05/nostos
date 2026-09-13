@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { getTeamId } from "./getTeamId";
 import { revalidatePath } from "next/cache";
 
-export async function confirmAdvance() {
+export async function confirmAdvance(fromLevelNumber?: number) {
   const teamId = await getTeamId();
   if (!teamId) return { success: false, error: "Not authenticated" };
 
@@ -14,12 +14,20 @@ export async function confirmAdvance() {
     .eq("team_id", teamId)
     .single();
 
-  if (fetchError) {
+  if (fetchError || !currentProgress) {
     console.error(`[confirmAdvance] Error fetching progress for team ${teamId}:`, fetchError);
     return { success: false, error: "Database error" };
   }
 
-  if (currentProgress?.pending_advance) {
+  // Guard against race conditions & double calls:
+  // Only advance if pending_advance is true AND current_level matches fromLevelNumber (if specified)
+  if (currentProgress.pending_advance) {
+    if (fromLevelNumber !== undefined && currentProgress.current_level !== fromLevelNumber) {
+      console.log(`[confirmAdvance] Team ${teamId} already advanced past level ${fromLevelNumber} (current: ${currentProgress.current_level}). Skipping.`);
+      revalidatePath("/play");
+      return { success: true };
+    }
+
     const { error } = await supabase
       .from("progress")
       .update({ 
