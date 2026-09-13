@@ -42,7 +42,7 @@ export const useTeamSync = () => {
   return ctx;
 };
 
-export function TeamSyncProvider({ teamId, username, memberNames = [], children }: { teamId: string, username: string, memberNames?: string[], children: React.ReactNode }) {
+export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumber, children }: { teamId: string, username: string, memberNames?: string[], levelNumber?: number, children: React.ReactNode }) {
   const [members, setMembers] = useState<SyncMember[]>([]);
   const [deviceToken, setDeviceToken] = useState<string>("");
   const [deviceAlias, setDeviceAlias] = useState<string>("");

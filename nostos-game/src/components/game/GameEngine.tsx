@@ -148,8 +148,8 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
   const currentIncorrectCount = state.incorrect_count ?? progress.incorrect_count;
   
   // A puzzle is successfully solved if either the global progress says so (from a teammate solving it)
-  // or our local state says so (we solved it).
-  const isSolved = progress.pending_advance || state.success;
+  // or our local state for THIS specific level says so (we solved it).
+  const isSolved = progress.pending_advance || (state.success && state.completed_level === level.level_number);
 
   // The readiness gate is passed if everyone connected has marked ready, or during initial connection load.
   const isAllReady = connectedMembers.length === 0 || readyMembers.length === connectedMembers.length;
@@ -300,8 +300,8 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
 
 export function GameEngine({ level, progress, teamId, username, memberNames }: GameEngineProps) {
   return (
-    <TeamSyncProvider teamId={teamId} username={username} memberNames={memberNames}>
-      <GameEngineInner level={level} progress={progress} teamId={teamId} username={username} memberNames={memberNames} />
+    <TeamSyncProvider key={`sync_lvl_${level.level_number}`} teamId={teamId} username={username} memberNames={memberNames} levelNumber={level.level_number}>
+      <GameEngineInner key={`engine_lvl_${level.level_number}`} level={level} progress={progress} teamId={teamId} username={username} memberNames={memberNames} />
       <CrewChat levelId={level.id} levelNumber={level.level_number} />
     </TeamSyncProvider>
   );
