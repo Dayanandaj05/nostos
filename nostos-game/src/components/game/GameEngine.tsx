@@ -88,17 +88,8 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
     markDone(true);
   };
 
-  // When everyone is done, trigger server advancement
-  React.useEffect(() => {
-    if (isEveryoneDone && !advancing) {
-      setAdvancing(true);
-      startTransition(async () => {
-        await confirmAdvance(levelNumber);
-      });
-    }
-  }, [isEveryoneDone, advancing, levelNumber]);
-
-  if (advancing) {
+  // When everyone is done, render the TrialVictoryModal briefing
+  if (isEveryoneDone) {
     return <TrialVictoryModal currentLevelNumber={levelNumber} onProceed={() => { /* Transition handled by realtime router.refresh */ }} />;
   }
 
