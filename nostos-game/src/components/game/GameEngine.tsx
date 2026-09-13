@@ -89,7 +89,7 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
   }, [isEveryoneDone, advancing]);
 
   if (advancing) {
-    return <TrialVictoryModal currentLevelNumber={levelNumber} onProceed={() => window.location.reload()} />;
+    return <TrialVictoryModal currentLevelNumber={levelNumber} onProceed={() => { /* Transition handled by realtime router.refresh */ }} />;
   }
 
   return (

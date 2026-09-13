@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export interface SyncMember {
   device_token: string;
@@ -46,6 +47,7 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
   const [deviceAlias, setDeviceAlias] = useState<string>("");
   const [myState, setMyState] = useState({ isReady: true, isDone: false });
   const channelRef = useRef<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let token = localStorage.getItem("nostos_device_token");
@@ -97,6 +99,24 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
         }
       });
 
+    // Listen to database changes for progress sync
+    const progressChannel = supabase.channel(`progress_sync_${teamId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'progress',
+          filter: `team_id=eq.${teamId}`
+        },
+        () => {
+          // Whenever the database updates (e.g. pending_advance toggled, or level changed)
+          // we force Next.js to re-fetch the server component for all clients.
+          router.refresh();
+        }
+      )
+      .subscribe();
+
     // Offline fallback: if no members appear after 1.5 seconds, assume offline
     const fallbackTimer = setTimeout(() => {
       setMembers(prev => {
@@ -117,6 +137,7 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
     return () => {
       clearTimeout(fallbackTimer);
       supabase.removeChannel(channel);
+      supabase.removeChannel(progressChannel);
     };
   }, [teamId]);
 
