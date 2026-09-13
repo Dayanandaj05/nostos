@@ -12,6 +12,11 @@ export async function getVariant(levelId: string, deviceToken: string, variants:
   const teamId = session.id;
 
   try {
+    // Add a random jitter (0 - 1500ms) to prevent race conditions when all 
+    // teammates transition to this trial at the exact same millisecond.
+    // This allows one teammate to insert their assignment before the next one checks.
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1500));
+
     // 1. Check if this device already has an assignment for this level
     const { data: existing, error: fetchError } = await supabase
       .from("level_variant_assignments")

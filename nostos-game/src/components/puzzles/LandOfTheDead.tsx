@@ -62,7 +62,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
       try {
         const result = await Promise.race([
           getVariant(levelId, token, variantsList),
-          new Promise<null>(resolve => setTimeout(() => resolve(null), 600))
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 2500))
         ]);
 
         if (result && result.variant_key && isMounted) {
