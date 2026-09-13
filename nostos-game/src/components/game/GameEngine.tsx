@@ -17,11 +17,16 @@ interface GameEngineProps {
   progress: any;
   teamId: string;
   username: string;
+  memberNames?: string[];
 }
 
 function ReadinessGate({ onReady }: { onReady: () => void }) {
-  const { connectedMembers, readyMembers, deviceAlias } = useTeamSync();
-  const amIReady = readyMembers.some(m => m.alias === deviceAlias);
+  const { connectedMembers, readyMembers, memberNames, deviceAlias } = useTeamSync();
+  const amIReady = readyMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase());
+
+  const crewList = (memberNames && memberNames.length > 0) 
+    ? memberNames 
+    : connectedMembers.map(m => m.alias);
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 relative z-10 text-center">
@@ -33,12 +38,13 @@ function ReadinessGate({ onReady }: { onReady: () => void }) {
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
         <ul className="space-y-4">
-          {connectedMembers.map(member => {
-            const isReady = member.isReady;
+          {crewList.map(name => {
+            const isReady = readyMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isReady);
+            const isYou = name.toLowerCase() === deviceAlias.toLowerCase();
             return (
-              <li key={member.device_token} className="flex justify-between items-center p-3 border-b border-gold/10 last:border-0">
+              <li key={name} className="flex justify-between items-center p-3 border-b border-gold/10 last:border-0">
                 <span className={`font-serif uppercase tracking-widest ${isReady ? 'text-gold' : 'text-parchment/60'}`}>
-                  {member.alias} {member.alias === deviceAlias && "(You)"}
+                  {name} {isYou && "(You)"}
                 </span>
                 {isReady ? (
                   <span className="flex items-center text-success text-sm font-bold uppercase tracking-wider"><CheckCircle2 className="w-5 h-5 mr-2" /> Ready</span>
@@ -63,22 +69,26 @@ function ReadinessGate({ onReady }: { onReady: () => void }) {
 }
 
 function CompletionGate({ levelNumber }: { levelNumber: number }) {
-  const { connectedMembers, doneMembers, deviceAlias, markDone } = useTeamSync();
+  const { connectedMembers, doneMembers, memberNames, deviceAlias, markDone } = useTeamSync();
   const [isPending, startTransition] = useTransition();
   const [advancing, setAdvancing] = useState(false);
 
-  const amIDone = doneMembers.some(m => m.alias === deviceAlias);
-  const isEveryoneDone = connectedMembers.length > 0 && doneMembers.length === connectedMembers.length;
+  const amIDone = doneMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase() && m.isDone);
+
+  const crewList = (memberNames && memberNames.length > 0)
+    ? memberNames
+    : connectedMembers.map(m => m.alias);
+
+  // Everyone in the registered crew list must be marked done
+  const isEveryoneDone = crewList.length > 0 && crewList.every(name => 
+    doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
+  );
 
   const handleMarkDone = () => {
     markDone(true);
   };
 
-  const handleForceAdvance = () => {
-    setAdvancing(true);
-  };
-
-  // If everyone is done, we can auto-advance
+  // When everyone is done, trigger server advancement
   React.useEffect(() => {
     if (isEveryoneDone && !advancing) {
       setAdvancing(true);
@@ -97,17 +107,21 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
       <Anchor className="w-16 h-16 text-gold mx-auto opacity-80" />
       <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">The Trial is Bested</h2>
       <p className="text-parchment/70 font-serif text-lg italic max-w-lg mx-auto">
-        The answer was true. Before we set sail to the next challenge, all hands must confirm they are finished with their tasks.
+        The answer was true. Before setting sail to Trial {levelNumber + 1}, all registered crew members must confirm completion.
       </p>
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
+        <h3 className="text-xs uppercase tracking-widest text-parchment/50 font-bold mb-4 border-b border-gold/10 pb-2">
+          Crew Completion Status ({doneMembers.length} / {crewList.length} Finished)
+        </h3>
         <ul className="space-y-4">
-          {connectedMembers.map(member => {
-            const isDone = member.isDone;
+          {crewList.map(name => {
+            const isDone = doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone);
+            const isYou = name.toLowerCase() === deviceAlias.toLowerCase();
             return (
-              <li key={member.device_token} className="flex justify-between items-center p-3 border-b border-gold/10 last:border-0">
-                <span className={`font-serif uppercase tracking-widest ${isDone ? 'text-gold' : 'text-parchment/60'}`}>
-                  {member.alias} {member.alias === deviceAlias && "(You)"}
+              <li key={name} className="flex justify-between items-center p-3 border-b border-gold/10 last:border-0">
+                <span className={`font-serif uppercase tracking-widest ${isDone ? 'text-gold font-bold' : 'text-parchment/60'}`}>
+                  {name} {isYou && "(You)"}
                 </span>
                 {isDone ? (
                   <span className="flex items-center text-success text-sm font-bold uppercase tracking-wider"><CheckCircle2 className="w-5 h-5 mr-2" /> Done</span>
@@ -121,15 +135,14 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
       </Card>
 
       {!amIDone ? (
-        <Button onClick={handleMarkDone} className="w-full py-4 text-xl">
+        <Button onClick={handleMarkDone} className="w-full py-4 text-xl font-bold">
           Mark My Part Done
         </Button>
       ) : (
         <div className="space-y-4">
-          <p className="text-gold/80 font-serif italic animate-pulse">Waiting for all hands to confirm...</p>
-          <Button onClick={handleForceAdvance} className="w-full py-4 text-xl font-bold bg-gold text-ink hover:bg-gold/90">
-            Set Sail for Trial {levelNumber + 1}
-          </Button>
+          <p className="text-gold/80 font-serif italic animate-pulse text-lg">
+            Waiting for all registered crew members to complete the trial...
+          </p>
         </div>
       )}
     </div>
@@ -294,10 +307,10 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
   );
 }
 
-export function GameEngine({ level, progress, teamId, username }: GameEngineProps) {
+export function GameEngine({ level, progress, teamId, username, memberNames }: GameEngineProps) {
   return (
-    <TeamSyncProvider teamId={teamId} username={username}>
-      <GameEngineInner level={level} progress={progress} teamId={teamId} username={username} />
+    <TeamSyncProvider teamId={teamId} username={username} memberNames={memberNames}>
+      <GameEngineInner level={level} progress={progress} teamId={teamId} username={username} memberNames={memberNames} />
       <CrewChat levelId={level.id} levelNumber={level.level_number} />
     </TeamSyncProvider>
   );

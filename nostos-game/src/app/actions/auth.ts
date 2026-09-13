@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { createSession } from "@/lib/session";
+import { createSession, setActiveSession } from "@/lib/session";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -40,7 +40,7 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   try {
     const { data, error } = await supabase
       .from("teams")
-      .select("id, password_hash")
+      .select("id, password_hash, member_names")
       .ilike("ship_name", ship_name)
       .maybeSingle();
 
@@ -71,8 +71,22 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
     return { success: false, error: "Incorrect password. The sea rejects you." };
   }
 
+  // Validate crew member name against team.member_names
+  const memberNames: string[] = team.member_names || [];
+  const isValidMember = memberNames.length === 0 || memberNames.some(m => m.trim().toLowerCase() === username.toLowerCase());
+  if (!isValidMember) {
+    return { 
+      success: false, 
+      error: `Sailor "${username}" is not a registered crew member of "${ship_name}".` 
+    };
+  }
+
+  // Generate unique session ID for single-device tracking
+  const sessionId = crypto.randomUUID();
+  setActiveSession(team.id, username, sessionId);
+
   // Create session
-  await createSession({ role: "team", id: team.id, ship_name, username });
+  await createSession({ role: "team", id: team.id, ship_name, username, sessionId });
   await ensureDeviceToken();
 
   redirect("/play");

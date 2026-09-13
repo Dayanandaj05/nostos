@@ -1,5 +1,5 @@
 import React from "react";
-import { getSession } from "@/lib/session";
+import { getSession, isSessionActive } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { GameEngine } from "@/components/game/GameEngine";
 import { TeamSyncProvider } from "@/components/game/TeamSyncProvider";
@@ -10,7 +10,6 @@ import { SEED_LEVELS } from "@/lib/mockData";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 export default async function PlayPage({ searchParams }: { searchParams?: Promise<{ level?: string }> }) {
-  const resolvedParams = searchParams ? await searchParams : undefined;
   const session = await getSession();
   
   if (!session || session.role !== "team") {
@@ -21,12 +20,33 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     );
   }
 
+  // Validate single device active session
+  if (session.username && session.sessionId && !isSessionActive(session.id, session.username, session.sessionId)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-ink text-parchment p-6 text-center">
+        <p className="text-danger text-xl font-serif mb-4">Your session has been logged in on another device.</p>
+        <Link href="/login" className="text-gold underline font-serif">Log in again to reclaim your vessel.</Link>
+      </div>
+    );
+  }
+
   const teamId = session.id;
 
-  // 1. Fetch team progress with fallback
+  // 1. Fetch team progress and registered member names with fallback
   let progress: { current_level: number; incorrect_count: number; aid_tokens: number; pending_advance: boolean } | null = null;
+  let memberNames: string[] = [];
 
   try {
+    const { data: teamData } = await supabase
+      .from("teams")
+      .select("member_names")
+      .eq("id", teamId)
+      .maybeSingle();
+
+    if (teamData?.member_names) {
+      memberNames = teamData.member_names;
+    }
+
     const { data, error } = await supabase
       .from("progress")
       .select("current_level, incorrect_count, aid_tokens, pending_advance")
@@ -51,6 +71,21 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     console.warn("Supabase connection unavailable, using local dev progress fallback:", err);
   }
 
+  // Fallback for mockDevTeams if offline
+  if (memberNames.length === 0) {
+    const globalForDev = globalThis as unknown as { mockDevTeams?: any[] };
+    if (globalForDev.mockDevTeams) {
+      const mockTeam = globalForDev.mockDevTeams.find((t: any) => t.id === teamId || t.ship_name.toLowerCase() === session.ship_name?.toLowerCase());
+      if (mockTeam?.member_names) {
+        memberNames = mockTeam.member_names;
+      }
+    }
+  }
+
+  if (memberNames.length === 0) {
+    memberNames = [session.username || "Sailor"];
+  }
+
   if (!progress) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-ink text-parchment">
@@ -59,24 +94,8 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     );
   }
 
-  // Check for level override in query parameter (e.g. /play?level=2)
-  let currentLevelNumber = progress.current_level;
-  if (resolvedParams?.level) {
-    const overrideLvl = parseInt(resolvedParams.level, 10);
-    if (!isNaN(overrideLvl) && overrideLvl >= 1 && overrideLvl <= 10) {
-      currentLevelNumber = overrideLvl;
-      progress.current_level = overrideLvl;
-      progress.pending_advance = false;
-      try {
-        await supabase
-          .from("progress")
-          .update({ current_level: overrideLvl, pending_advance: false })
-          .eq("team_id", teamId);
-      } catch (e) {
-        // ignore DB error
-      }
-    }
-  }
+  // Strict sequential trial level
+  const currentLevelNumber = progress.current_level;
 
   // 2. Check for game completion
   if (currentLevelNumber > 10) {
@@ -114,7 +133,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     }
 
     return (
-      <TeamSyncProvider teamId={teamId} username={session.username || "Sailor"}>
+      <TeamSyncProvider teamId={teamId} username={session.username || "Sailor"} memberNames={memberNames}>
         <main className="min-h-screen bg-ink text-parchment flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
            {/* Less Intense Animated Ocean Canvas Background */}
            <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
@@ -199,7 +218,12 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
       <header className="w-full max-w-6xl mx-auto flex justify-between items-center mb-12 relative z-10 border-b border-parchment/20 pb-4">
         <div className="flex items-center gap-4">
           <Anchor className="w-8 h-8 text-gold" />
-          <span className="font-serif text-xl tracking-widest text-gold uppercase">{session.ship_name}</span>
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+            <span className="font-serif text-xl tracking-widest text-gold uppercase">{session.ship_name}</span>
+            <span className="text-parchment/70 font-serif italic text-sm border-l border-gold/30 pl-3">
+              Sailor: <strong className="text-parchment font-semibold not-italic">{session.username}</strong>
+            </span>
+          </div>
         </div>
         <div className="text-parchment/60 font-serif italic text-sm">
           Navigating Trial {currentLevelNumber} of 10
@@ -207,7 +231,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
       </header>
 
       {/* The Engine */}
-      <GameEngine level={level} progress={progress} teamId={teamId} username={session.username || "Sailor"} />
+      <GameEngine level={level} progress={progress} teamId={teamId} username={session.username || "Sailor"} memberNames={memberNames} />
 
     </main>
   );

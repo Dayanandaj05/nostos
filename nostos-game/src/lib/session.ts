@@ -9,7 +9,31 @@ export type SessionPayload = {
   id: string; // team_id or admin_id
   ship_name?: string;
   username?: string;
+  sessionId?: string;
 };
+
+// Global store for single device session tracking per crew member
+const getActiveSessionsMap = () => {
+  const g = globalThis as unknown as { activeSessions?: Map<string, string> };
+  if (!g.activeSessions) {
+    g.activeSessions = new Map<string, string>();
+  }
+  return g.activeSessions;
+};
+
+export function setActiveSession(teamId: string, username: string, sessionId: string) {
+  const key = `${teamId}:${username.trim().toLowerCase()}`;
+  getActiveSessionsMap().set(key, sessionId);
+}
+
+export function isSessionActive(teamId: string, username: string, sessionId?: string): boolean {
+  if (!sessionId) return true;
+  const key = `${teamId}:${username.trim().toLowerCase()}`;
+  const currentActiveSessionId = getActiveSessionsMap().get(key);
+  // If no active session tracked yet, allow it. If tracked, must match.
+  if (!currentActiveSessionId) return true;
+  return currentActiveSessionId === sessionId;
+}
 
 export async function encrypt(payload: SessionPayload) {
   return await new SignJWT(payload)
@@ -61,3 +85,4 @@ export async function clearSession() {
     path: "/",
   });
 }
+

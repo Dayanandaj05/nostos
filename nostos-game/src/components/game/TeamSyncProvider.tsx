@@ -24,6 +24,7 @@ interface TeamSyncContextType {
   connectedMembers: SyncMember[];
   readyMembers: SyncMember[];
   doneMembers: SyncMember[];
+  memberNames: string[];
   deviceAlias: string;
   markReady: (ready: boolean) => void;
   markDone: (done: boolean) => void;
@@ -41,7 +42,7 @@ export const useTeamSync = () => {
   return ctx;
 };
 
-export function TeamSyncProvider({ teamId, username, children }: { teamId: string, username: string, children: React.ReactNode }) {
+export function TeamSyncProvider({ teamId, username, memberNames = [], children }: { teamId: string, username: string, memberNames?: string[], children: React.ReactNode }) {
   const [members, setMembers] = useState<SyncMember[]>([]);
   const [deviceToken, setDeviceToken] = useState<string>("");
   const [deviceAlias, setDeviceAlias] = useState<string>("");
@@ -228,6 +229,7 @@ export function TeamSyncProvider({ teamId, username, children }: { teamId: strin
       connectedMembers: members,
       readyMembers,
       doneMembers,
+      memberNames,
       deviceAlias,
       markReady,
       markDone,
