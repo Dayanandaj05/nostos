@@ -12,27 +12,66 @@ export type SessionPayload = {
   sessionId?: string;
 };
 
+export type ActiveSessionData = {
+  sessionId: string;
+  deviceToken?: string;
+  lastActiveAt: number;
+};
+
 // Global store for single device session tracking per crew member
 const getActiveSessionsMap = () => {
-  const g = globalThis as unknown as { activeSessions?: Map<string, string> };
+  const g = globalThis as unknown as { activeSessions?: Map<string, ActiveSessionData> };
   if (!g.activeSessions) {
-    g.activeSessions = new Map<string, string>();
+    g.activeSessions = new Map<string, ActiveSessionData>();
   }
   return g.activeSessions;
 };
 
-export function setActiveSession(teamId: string, username: string, sessionId: string) {
+export function setActiveSession(teamId: string, username: string, sessionId: string, deviceToken?: string) {
   const key = `${teamId}:${username.trim().toLowerCase()}`;
-  getActiveSessionsMap().set(key, sessionId);
+  getActiveSessionsMap().set(key, {
+    sessionId,
+    deviceToken,
+    lastActiveAt: Date.now()
+  });
+}
+
+export function isUserCurrentlyLoggedIn(teamId: string, username: string, currentDeviceToken?: string): boolean {
+  const key = `${teamId}:${username.trim().toLowerCase()}`;
+  const existing = getActiveSessionsMap().get(key);
+  if (!existing) return false;
+
+  // Active session expires after 5 minutes of total inactivity
+  const isRecent = Date.now() - existing.lastActiveAt < 5 * 60 * 1000;
+  if (!isRecent) return false;
+
+  // If it's the exact same device token, allow re-login/refresh
+  if (currentDeviceToken && existing.deviceToken === currentDeviceToken) {
+    return false;
+  }
+
+  return true;
+}
+
+export function updateSessionHeartbeat(teamId: string, username: string) {
+  const key = `${teamId}:${username.trim().toLowerCase()}`;
+  const existing = getActiveSessionsMap().get(key);
+  if (existing) {
+    existing.lastActiveAt = Date.now();
+  }
+}
+
+export function clearActiveSession(teamId: string, username: string) {
+  const key = `${teamId}:${username.trim().toLowerCase()}`;
+  getActiveSessionsMap().delete(key);
 }
 
 export function isSessionActive(teamId: string, username: string, sessionId?: string): boolean {
   if (!sessionId) return true;
   const key = `${teamId}:${username.trim().toLowerCase()}`;
-  const currentActiveSessionId = getActiveSessionsMap().get(key);
-  // If no active session tracked yet, allow it. If tracked, must match.
-  if (!currentActiveSessionId) return true;
-  return currentActiveSessionId === sessionId;
+  const existing = getActiveSessionsMap().get(key);
+  if (!existing) return true;
+  return existing.sessionId === sessionId;
 }
 
 export async function encrypt(payload: SessionPayload) {

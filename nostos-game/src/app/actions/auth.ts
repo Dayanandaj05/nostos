@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { createSession, setActiveSession } from "@/lib/session";
+import { createSession, setActiveSession, isUserCurrentlyLoggedIn } from "@/lib/session";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -81,13 +81,24 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
     };
   }
 
+  await ensureDeviceToken();
+  const cookieStore = await cookies();
+  const deviceToken = cookieStore.get("device_token")?.value;
+
+  // Check if sailor is already logged in on another device or window
+  if (isUserCurrentlyLoggedIn(team.id, username, deviceToken)) {
+    return {
+      success: false,
+      error: `Sailor "${username}" is already active on another device or tab. Log out on that device to proceed.`
+    };
+  }
+
   // Generate unique session ID for single-device tracking
   const sessionId = crypto.randomUUID();
-  setActiveSession(team.id, username, sessionId);
+  setActiveSession(team.id, username, sessionId, deviceToken);
 
   // Create session
   await createSession({ role: "team", id: team.id, ship_name, username, sessionId });
-  await ensureDeviceToken();
 
   redirect("/play");
 }
