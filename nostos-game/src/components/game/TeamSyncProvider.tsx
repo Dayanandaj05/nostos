@@ -32,6 +32,7 @@ interface TeamSyncContextType {
   broadcastSystemMessage: (text: string) => void;
   broadcastAidProposal: () => void;
   broadcastChatMessage: (text: string, customSender?: string) => void;
+  broadcastLevelAdvance: (targetLevel?: number) => void;
   channelRef: any;
 }
 
@@ -51,13 +52,20 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
   const channelRef = useRef<any>(null);
   const router = useRouter();
 
-  // Periodic heartbeat to keep session active and detect single-device displacement
+  // Periodic heartbeat to keep session active, detect displacement, and auto-sync level
   useEffect(() => {
     const runHeartbeat = async () => {
       try {
         const res = await sessionHeartbeat();
         if (res && res.active === false) {
           router.push("/login?error=session_displaced");
+          return;
+        }
+
+        if (res && res.active && levelNumber !== undefined && res.currentLevel !== undefined) {
+          if (res.currentLevel !== levelNumber) {
+            router.refresh();
+          }
         }
       } catch (err) {
         // Ignore network errors in heartbeat
@@ -67,10 +75,10 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
     // Run initial heartbeat
     runHeartbeat();
 
-    // Repeat every 15 seconds
-    const interval = setInterval(runHeartbeat, 15000);
+    // Repeat every 4 seconds for fast multi-device level synchronization
+    const interval = setInterval(runHeartbeat, 4000);
     return () => clearInterval(interval);
-  }, [router]);
+  }, [router, levelNumber]);
 
   useEffect(() => {
     let token = localStorage.getItem("nostos_device_token");
@@ -112,6 +120,9 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         }
         setMembers(connected);
       })
+      .on('broadcast', { event: 'level_advanced' }, () => {
+        router.refresh();
+      })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
@@ -134,7 +145,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         },
         () => {
           // Whenever the database updates (e.g. pending_advance toggled, or level changed)
-          // we force Next.js to re-fetch the server component for all clients.
+          // force Next.js to re-fetch the server component for all clients.
           router.refresh();
         }
       )
@@ -182,6 +193,16 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
   const markDone = (done: boolean) => {
     setMyState(prev => ({ ...prev, isDone: done }));
     setMembers(prev => prev.map(m => m.device_token === deviceToken ? { ...m, isDone: done } : m));
+  };
+
+  const broadcastLevelAdvance = (targetLevel?: number) => {
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'level_advanced',
+        payload: { targetLevel }
+      });
+    }
   };
 
   const broadcastSystemMessage = (text: string) => {
@@ -258,6 +279,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       broadcastSystemMessage,
       broadcastAidProposal,
       broadcastChatMessage,
+      broadcastLevelAdvance,
       channelRef: channelRef.current
     }}>
       {children}

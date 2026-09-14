@@ -71,16 +71,19 @@ function ReadinessGate({ onReady }: { onReady: () => void }) {
 function CompletionGate({ levelNumber }: { levelNumber: number }) {
   const { connectedMembers, doneMembers, memberNames, deviceAlias, markDone } = useTeamSync();
   const [isPending, startTransition] = useTransition();
-  const [advancing, setAdvancing] = useState(false);
 
   const amIDone = doneMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase() && m.isDone);
 
-  const crewList = (memberNames && memberNames.length > 0)
+  const registeredCrew = (memberNames && memberNames.length > 0)
     ? memberNames
     : connectedMembers.map(m => m.alias);
 
-  // Everyone in the registered crew list must be marked done
-  const isEveryoneDone = crewList.length > 0 && crewList.every(name => 
+  // Check completion against currently active/connected members, fallback to registered crew if alone/offline
+  const activeMembersToWait = (connectedMembers && connectedMembers.length > 0)
+    ? connectedMembers.map(m => m.alias)
+    : registeredCrew;
+
+  const isEveryoneDone = activeMembersToWait.length > 0 && activeMembersToWait.every(name => 
     doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
   );
 
@@ -103,10 +106,10 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
         <h3 className="text-xs uppercase tracking-widest text-parchment/50 font-bold mb-4 border-b border-gold/10 pb-2">
-          Crew Completion Status ({doneMembers.length} / {crewList.length} Finished)
+          Crew Completion Status ({doneMembers.length} / {registeredCrew.length} Finished)
         </h3>
         <ul className="space-y-4">
-          {crewList.map(name => {
+          {registeredCrew.map((name: string) => {
             const isDone = doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone);
             const isYou = name.toLowerCase() === deviceAlias.toLowerCase();
             return (

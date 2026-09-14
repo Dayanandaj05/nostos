@@ -110,7 +110,31 @@ export async function sessionHeartbeat() {
   }
 
   const active = updateSessionHeartbeat(session.id, session.username, session.sessionId);
-  return { active };
+  if (!active) {
+    return { active: false };
+  }
+
+  let currentLevel: number | undefined;
+  let pendingAdvance: boolean | undefined;
+
+  if (session.role === "team") {
+    try {
+      const { data } = await supabase
+        .from("progress")
+        .select("current_level, pending_advance")
+        .eq("team_id", session.id)
+        .maybeSingle();
+
+      if (data) {
+        currentLevel = data.current_level;
+        pendingAdvance = data.pending_advance;
+      }
+    } catch (e) {
+      // ignore offline errors
+    }
+  }
+
+  return { active: true, currentLevel, pendingAdvance };
 }
 
 export async function logoutTeam() {

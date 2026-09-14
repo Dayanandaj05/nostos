@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ShieldCheck, ArrowRight, Compass, Users, Sparkles, Award, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { confirmAdvance } from "@/app/actions/confirmAdvance";
+import { useTeamSync } from "@/components/game/TeamSyncProvider";
 
 interface TrialVictoryModalProps {
   currentLevelNumber: number;
@@ -105,6 +106,8 @@ const NEXT_TRIAL_DATA: Record<number, { title: string; subtitle: string; isTeamw
 
 export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictoryModalProps) {
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const { broadcastLevelAdvance } = useTeamSync();
+
   const nextLevelNumber = currentLevelNumber + 1;
   const nextData = NEXT_TRIAL_DATA[nextLevelNumber] || {
     title: `Trial ${nextLevelNumber}: The Final Horizon`,
@@ -117,6 +120,7 @@ export function TrialVictoryModal({ currentLevelNumber, onProceed }: TrialVictor
     if (isAdvancing) return;
     setIsAdvancing(true);
     try {
+      broadcastLevelAdvance(nextLevelNumber);
       await confirmAdvance(currentLevelNumber);
     } catch (e) {
       console.error("[TrialVictoryModal] Error during advance:", e);
