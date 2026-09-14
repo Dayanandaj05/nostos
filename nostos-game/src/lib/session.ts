@@ -56,13 +56,22 @@ export function isUserCurrentlyLoggedIn(teamId: string, username: string, curren
 export function updateSessionHeartbeat(teamId: string, username: string, sessionId?: string): boolean {
   const key = `${teamId}:${username.trim().toLowerCase()}`;
   const existing = getActiveSessionsMap().get(key);
+  
   if (existing) {
     if (sessionId && existing.sessionId !== sessionId) {
-      return false;
+      return false; // Actually a different session trying to heartbeat
     }
     existing.lastActiveAt = Date.now();
     return true;
   }
+  
+  // VERCEL SERVERLESS FIX: If the global Map is empty (e.g. cold start),
+  // we must re-initialize the session in memory instead of rejecting it!
+  if (sessionId) {
+    setActiveSession(teamId, username, sessionId, undefined);
+    return true;
+  }
+
   return false;
 }
 
