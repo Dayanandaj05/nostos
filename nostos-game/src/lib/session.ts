@@ -75,7 +75,10 @@ export function isSessionActive(teamId: string, username: string, sessionId?: st
   if (!sessionId) return false;
   const key = `${teamId}:${username.trim().toLowerCase()}`;
   const existing = getActiveSessionsMap().get(key);
-  if (!existing) return false;
+  
+  // VERCEL SERVERLESS FIX: If the global Map is empty (e.g. cold start on a different lambda),
+  // we must assume the session is valid to prevent instantly logging the user out right after login.
+  if (!existing) return true; 
   
   // Must match session ID and be within inactivity threshold (2 mins)
   const isRecent = Date.now() - existing.lastActiveAt < 2 * 60 * 1000;
