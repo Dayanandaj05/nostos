@@ -91,7 +91,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
     setDeviceAlias(alias);
 
     // Reset local state for fresh level mount
-    setMyState({ isReady: true, isDone: false });
+    setMyState({ isReady: false, isDone: false });
 
     const channel = supabase.channel(`crew_chat_${teamId}`, {
       config: {
@@ -113,7 +113,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
             connected.push({
               device_token: key,
               alias: presence.alias || "Unknown",
-              isReady: presence.isReady ?? true,
+              isReady: presence.isReady ?? false,
               isDone: !!presence.isDone
             });
           }
@@ -121,6 +121,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         setMembers(connected);
       })
       .on('broadcast', { event: 'level_advanced' }, () => {
+        if (document.body.classList.contains('transitioning-level')) return;
         document.body.classList.add('transitioning-level');
         router.refresh();
         setTimeout(() => document.body.classList.remove('transitioning-level'), 4000);
@@ -129,7 +130,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         if (status === 'SUBSCRIBED') {
           await channel.track({
             alias,
-            isReady: true,
+            isReady: false,
             isDone: false
           });
         }
@@ -147,6 +148,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         },
         () => {
           // Whenever the database updates (e.g. pending_advance toggled, or level changed)
+          if (document.body.classList.contains('transitioning-level')) return;
           document.body.classList.add('transitioning-level');
           router.refresh();
           setTimeout(() => document.body.classList.remove('transitioning-level'), 4000);
