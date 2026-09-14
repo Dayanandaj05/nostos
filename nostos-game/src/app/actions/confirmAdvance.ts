@@ -12,7 +12,7 @@ export async function confirmAdvance(fromLevelNumber?: number) {
     .from("progress")
     .select("current_level")
     .eq("team_id", teamId)
-    .single();
+    .maybeSingle();
 
   if (fetchError || !currentProgress) {
     console.error(`[confirmAdvance] Error fetching progress for team ${teamId}:`, fetchError);

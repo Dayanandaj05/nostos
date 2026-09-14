@@ -36,24 +36,35 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
 
   try {
     const t0 = Date.now();
-    // 1. Get current level of the team
-    const { data: progData, error: progErr } = await supabase
+    // 1. Get current progress — use maybeSingle so missing row doesn't throw
+    const { data: progData } = await supabase
       .from("progress")
       .select("current_level, incorrect_count, correct_count")
       .eq("team_id", teamId)
-      .single();
-    if (progData && !progErr) progress = progData;
+      .maybeSingle();
+
+    if (progData) {
+      progress = progData;
+    } else {
+      // Row missing — create it now so the answer can be processed
+      const { data: inserted } = await supabase
+        .from("progress")
+        .insert([{ team_id: teamId, current_level: 1, first_login_at: new Date().toISOString() }])
+        .select("current_level, incorrect_count, correct_count")
+        .single();
+      if (inserted) progress = inserted;
+    }
     const t1 = Date.now();
     console.log(`[submitAnswer] progress fetch took ${t1 - t0}ms`);
 
     if (progress) {
-      // 2. Fetch level data
-      const { data: lvlData, error: lvlErr } = await supabase
+      // 2. Fetch level data — use maybeSingle for safety
+      const { data: lvlData } = await supabase
         .from("levels")
         .select("id, correct_answer, is_locked")
         .eq("level_number", progress.current_level)
-        .single();
-      if (lvlData && !lvlErr) level = lvlData;
+        .maybeSingle();
+      if (lvlData) level = lvlData;
       console.log(`[submitAnswer] level fetch took ${Date.now() - t1}ms`);
     }
   } catch (err) {

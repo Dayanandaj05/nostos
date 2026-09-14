@@ -187,7 +187,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
       .from("levels")
       .select("*")
       .eq("level_number", currentLevelNumber)
-      .single();
+      .maybeSingle();
 
     if (lvlData && !lvlError) {
       level = lvlData;

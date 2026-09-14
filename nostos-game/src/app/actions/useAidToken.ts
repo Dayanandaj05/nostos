@@ -14,7 +14,7 @@ export async function useAidToken() {
       .from("progress")
       .select("aid_tokens")
       .eq("team_id", teamId)
-      .single();
+      .maybeSingle();
 
     if (!fetchErr && currentProgress && currentProgress.aid_tokens > 0) {
       await supabase
