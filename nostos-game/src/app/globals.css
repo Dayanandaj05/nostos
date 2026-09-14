@@ -5,6 +5,30 @@
   --foreground: #F1E7D0;
 }
 
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Fast UI feedback overlay for realtime level transitions */
+body.transitioning-level::after {
+  content: "Consulting the Oracle...";
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 18, 30, 0.95);
+  color: #C9A24B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  z-index: 9999;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 @theme {
   --color-aegean: #1B3B5F;
   --color-wave: #2E7D8C;

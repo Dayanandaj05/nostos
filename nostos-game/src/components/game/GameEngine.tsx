@@ -78,10 +78,9 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
     ? memberNames
     : connectedMembers.map(m => m.alias);
 
-  // Check completion against currently active/connected members, fallback to registered crew if alone/offline
-  const activeMembersToWait = (connectedMembers && connectedMembers.length > 0)
-    ? connectedMembers.map(m => m.alias)
-    : registeredCrew;
+  // We must wait for ALL registered crew members. If someone drops offline, they must 
+  // reconnect and mark done. This strictly enforces the "everyone must solve individually" rule.
+  const activeMembersToWait = registeredCrew;
 
   const isEveryoneDone = activeMembersToWait.length > 0 && activeMembersToWait.every(name => 
     doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)

@@ -121,7 +121,9 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         setMembers(connected);
       })
       .on('broadcast', { event: 'level_advanced' }, () => {
+        document.body.classList.add('transitioning-level');
         router.refresh();
+        setTimeout(() => document.body.classList.remove('transitioning-level'), 4000);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -145,8 +147,9 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         },
         () => {
           // Whenever the database updates (e.g. pending_advance toggled, or level changed)
-          // force Next.js to re-fetch the server component for all clients.
+          document.body.classList.add('transitioning-level');
           router.refresh();
+          setTimeout(() => document.body.classList.remove('transitioning-level'), 4000);
         }
       )
       .subscribe();
