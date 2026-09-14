@@ -121,17 +121,26 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   let isCorrect = normSubmitted === normTarget;
 
   if (!isCorrect) {
-    if (level.correct_answer === "NOBODY" || currentLevel === 3) {
-      if (["nobody", "nothing", "noone", "outis", "none"].includes(normSubmitted)) {
+    if (level.correct_answer === "ECHO" || currentLevel === 3) {
+      if (["echo", "an echo"].includes(normSubmitted)) {
         isCorrect = true;
       }
-    } else if (currentLevel === 6 && (normSubmitted === "findtheroadhome" || normSubmitted === "theroadhome")) {
-      isCorrect = true;
+    } else if (currentLevel === 6) {
+      // Dynamic answer based on team size
+      const crewSize = Math.max(2, session.username ? 2 : 2); // For now, we allow partial match if they type at least their words. Actually, let's fetch team size from DB to be completely accurate, or allow the standard level.correct_answer if they submit it.
+      // Wait, we can't easily fetch team size here without a query, let's query it.
+      const { data: teamData } = await supabase.from("teams").select("member_names").eq("id", teamId).maybeSingle();
+      const actualSize = Math.max(2, teamData?.member_names?.length || 2);
+      const variants = ["OPEN", "THE", "DOOR", "NOW"];
+      const targetStr = variants.slice(0, actualSize).join("");
+      if (normSubmitted === targetStr.toLowerCase() || normSubmitted === "openthedoornow") {
+        isCorrect = true;
+      }
     } else if (level.correct_answer === "6_CORRECT" && (normSubmitted === "6" || normSubmitted === "6correct" || normSubmitted === "six")) {
       isCorrect = true;
-    } else if (level.correct_answer === "DEPENDS_ON_PATH" && (normSubmitted === "5" || normSubmitted === "15" || normSubmitted === "15" || normSubmitted === "dependsonpath" || normSubmitted === "scylla" || normSubmitted === "charybdis")) {
+    } else if (level.correct_answer === "DEPENDS_ON_PATH" && (normSubmitted === "5" || normSubmitted === "15" || normSubmitted === "dependsonpath" || normSubmitted === "left" || normSubmitted === "right")) {
       isCorrect = true;
-    } else if (level.correct_answer === "MOLY" && (normSubmitted === "moly" || normSubmitted === "holyherb" || normSubmitted === "herb")) {
+    } else if (level.correct_answer === "GOLD" && (normSubmitted === "gold" || normSubmitted === "coin")) {
       isCorrect = true;
     } else if (level.correct_answer === "0" && (normSubmitted === "0" || normSubmitted === "zero" || normSubmitted === "none")) {
       isCorrect = true;

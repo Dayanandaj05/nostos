@@ -5,13 +5,13 @@ import { MessageSquare, X, Send, Scroll, Sparkles, HandHeart, Check } from "luci
 import { useTeamSync, ChatMessage } from "./TeamSyncProvider";
 import { useAidToken } from "@/app/actions/useAidToken";
 
-export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumber: number }) {
+export function CrewChat({ levelId, levelNumber, teamId }: { levelId: string, levelNumber: number, teamId: string }) {
   const { deviceAlias, channelRef, broadcastSystemMessage, broadcastAidProposal } = useTeamSync();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("nostos_crew_chat_history");
+        const saved = localStorage.getItem(`nostos_crew_chat_history_${teamId}`);
         if (saved) return JSON.parse(saved);
       } catch (e) {}
     }
@@ -27,10 +27,10 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("nostos_crew_chat_history", JSON.stringify(messages));
+        localStorage.setItem(`nostos_crew_chat_history_${teamId}`, JSON.stringify(messages));
       } catch (e) {}
     }
-  }, [messages]);
+  }, [messages, teamId]);
 
   const isOpenRef = useRef(isOpen);
   isOpenRef.current = isOpen;

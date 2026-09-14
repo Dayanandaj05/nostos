@@ -557,7 +557,7 @@ export function GameEngine({ level, progress, teamId, username, memberNames }: G
   return (
     <TeamSyncProvider key={`sync_lvl_${level.level_number}`} teamId={teamId} username={username} memberNames={memberNames} levelNumber={level.level_number} absentMembers={absentMembers}>
       <GameEngineInner key={`engine_lvl_${level.level_number}`} level={level} progress={progress} teamId={teamId} username={username} memberNames={memberNames} absentMembers={absentMembers} />
-      <CrewChat levelId={level.id} levelNumber={level.level_number} />
+      <CrewChat levelId={level.id} levelNumber={level.level_number} teamId={teamId} />
     </TeamSyncProvider>
   );
 }

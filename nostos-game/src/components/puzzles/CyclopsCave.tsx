@@ -11,9 +11,9 @@ interface CyclopsCaveProps {
 }
 
 const DEFAULT_RIDDLES = [
-  { q: "What is greater than the gods, more evil than the demons, the poor have it, the rich need it, and if you eat it, you will die?", a: "NOTHING" },
-  { q: "Odysseus sharpened a wooden olive branch to blind Polyphemus in his sleep. What weapon was forged in the fire?", a: "STAKE" },
-  { q: "When the other Cyclopes came to aid Polyphemus and asked who harmed him, what name did Odysseus claim?", a: "NOBODY" }
+  { q: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a: "ECHO" },
+  { q: "The more of this there is, the less you see. What is it?", a: "DARKNESS" },
+  { q: "What has keys but can't open locks?", a: "PIANO" }
 ];
 
 export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
@@ -34,10 +34,11 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
         const input = parentForm.querySelector('input[name="answer"]') as HTMLInputElement;
         if (input) {
           const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+          const finalAnswer = riddles[0]?.a || "ECHO";
           if (nativeInputValueSetter) {
-            nativeInputValueSetter.call(input, "NOBODY");
+            nativeInputValueSetter.call(input, finalAnswer);
           } else {
-            input.value = "NOBODY";
+            input.value = finalAnswer;
           }
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -58,16 +59,16 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
     const userEntered = clean(localInput);
     if (!userEntered) return;
 
-    let isMatch = false;
-    if (step === 0) {
-      // Question 1: NOTHING
-      isMatch = userEntered === "NOTHING" || userEntered.includes("NOTHING") || userEntered.includes("NONE");
-    } else if (step === 1) {
-      // Question 2: STAKE
-      isMatch = userEntered === "STAKE" || userEntered.includes("STAKE") || userEntered.includes("SPEAR") || userEntered.includes("WOOD") || userEntered.includes("OLIVE");
-    } else if (step === 2) {
-      // Question 3: NOBODY
-      isMatch = userEntered === "NOBODY" || userEntered.includes("NOBODY") || userEntered.includes("OUTIS") || userEntered.includes("NOONE") || userEntered.includes("NONE");
+    const correctAnswer = clean(riddles[step].a);
+    let isMatch = userEntered.includes(correctAnswer) || userEntered === correctAnswer;
+    
+    // Add leniency for generic answers
+    if (correctAnswer === "ECHO") {
+      isMatch = isMatch || userEntered.includes("SOUND") || userEntered.includes("VOICE");
+    } else if (correctAnswer === "DARKNESS") {
+      isMatch = isMatch || userEntered.includes("DARK") || userEntered.includes("SHADOW");
+    } else if (correctAnswer === "PIANO") {
+      isMatch = isMatch || userEntered.includes("KEYBOARD") || userEntered.includes("ORGAN");
     }
 
     if (isMatch) {

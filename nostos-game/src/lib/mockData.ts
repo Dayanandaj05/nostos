@@ -2,8 +2,8 @@ export const SEED_LEVELS = [
   {
     id: "mock-lvl-1",
     level_number: 1,
-    title: "The Lotus-Eaters",
-    story_text: "You have arrived at an island where time stands still. The inhabitants offer you lotus flowers, and your crew begins to forget their homes and the faithful Queen Penelope awaiting in Ithaca. Decode the ancient scrolls to find the true path before you all succumb.",
+    title: "The Island of Time",
+    story_text: "You have arrived at an island where time stands still. The inhabitants offer you a strange fruit that makes your crew forget their mission. Decode the ancient scrolls to find the true path before you all succumb.",
     puzzle_type: "decoder_wheel",
     puzzle_data: { scrolls: ["VKH ZDLWV WKUHH GDBV ZHVW", "JLYH XS DQG VWDb", "WKH VHD LV FROG DQG GDUN", "IRUJHW BRXU KRPH"] },
     correct_answer: "SHE WAITS THREE DAYS WEST",
@@ -12,8 +12,8 @@ export const SEED_LEVELS = [
   {
     id: "mock-lvl-2",
     level_number: 2,
-    title: "Aeolus's Winds",
-    story_text: "The god of winds has gifted you a bag containing all the storm winds. But the bag is tied shut with a puzzle. Reveal the icons and arrange them to catch the favorable west wind.",
+    title: "The Wind Chamber",
+    story_text: "You found a mysterious bag containing all the storm winds. It's tied shut with a puzzle. Reveal the icons and arrange them to catch the favorable west wind.",
     puzzle_type: "icon_reveal",
     puzzle_data: { words: ["FOLLOW", "THE", "WEST", "WIND", "HOME"] },
     correct_answer: "FOLLOW THE WEST WIND HOME",
@@ -22,24 +22,24 @@ export const SEED_LEVELS = [
   {
     id: "mock-lvl-3",
     level_number: 3,
-    title: "The Cyclops's Cave",
-    story_text: "Trapped in the cave of Polyphemus! He has rolled a massive boulder over the entrance. You must solve his three riddles to unlock the three heavy iron locks holding the stone door in place.",
+    title: "The Locked Cave",
+    story_text: "Trapped in a dark cave! A massive boulder blocks the entrance. You must solve three riddles to unlock the three heavy iron locks holding the stone door in place.",
     puzzle_type: "visual_escape",
     puzzle_data: { 
       riddles: [
-        { q: "What is greater than the gods, more evil than the demons, the poor have it, the rich need it, and if you eat it, you will die?", a: "NOTHING" },
-        { q: "Odysseus sharpened a wooden olive branch to blind Polyphemus in his sleep. What weapon was forged in the fire?", a: "STAKE" },
-        { q: "When the other Cyclopes came to aid Polyphemus and asked who harmed him, what name did Odysseus claim?", a: "NOBODY" }
+        { q: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a: "ECHO" },
+        { q: "The more of this there is, the less you see. What is it?", a: "DARKNESS" },
+        { q: "What has keys but can't open locks?", a: "PIANO" }
       ] 
     },
-    correct_answer: "NOBODY",
+    correct_answer: "ECHO",
     is_locked: false
   },
   {
     id: "mock-lvl-4",
     level_number: 4,
-    title: "The Laestrygonians",
-    story_text: "Giant cannibals hurl boulders at your fleeing ships! You must navigate the treacherous straits by quickly solving a series of navigational calculations. Be swift, or be sunk.",
+    title: "The Treacherous Straits",
+    story_text: "Hostile forces are hurling boulders at your fleeing ships! You must navigate the treacherous straits by quickly solving a series of navigational calculations. Be swift, or be sunk.",
     puzzle_type: "progress_bar",
     puzzle_data: { questions: 12, required: 6 },
     correct_answer: "6_CORRECT",
@@ -48,38 +48,38 @@ export const SEED_LEVELS = [
   {
     id: "mock-lvl-5",
     level_number: 5,
-    title: "Circe's Island",
-    story_text: "The sorceress Circe has turned half your crew into swine! She warns you of the treacherous suitors besieging Queen Penelope's palace in Ithaca. Search her opulent hall for the hidden ingredients to counter her spell.",
+    title: "The Alchemist's Lab",
+    story_text: "A rogue alchemist has trapped your crew. Search the opulent lab for the hidden ingredients to counter the spell.",
     puzzle_type: "hidden_object",
-    puzzle_data: { hotspots: [{ id: 1, letter: "M" }, { id: 2, letter: "O" }, { id: 3, letter: "L" }, { id: 4, letter: "Y" }] },
-    correct_answer: "MOLY",
+    puzzle_data: { hotspots: [{ id: 1, letter: "G" }, { id: 2, letter: "O" }, { id: 3, letter: "L" }, { id: 4, letter: "D" }] },
+    correct_answer: "GOLD",
     is_locked: false
   },
   {
     id: "mock-lvl-6",
     level_number: 6,
-    title: "The Land of the Dead",
-    story_text: "You have descended into the Underworld. The spirits whisper fragmented truths. You must each listen to a different shade and combine their knowledge to find the way back to the living.",
+    title: "The Fragmented Truth",
+    story_text: "You are in a dark room. The spirits whisper fragmented truths. You must each read a different clue and combine your knowledge to escape.",
     puzzle_type: "asymmetric_split",
-    puzzle_data: { variants: ["FIND", "THE", "ROAD", "HOME"] },
-    correct_answer: "FIND THE ROAD HOME",
+    puzzle_data: { variants: ["OPEN", "THE", "DOOR", "NOW"] },
+    correct_answer: "DYNAMIC",
     is_locked: false
   },
   {
     id: "mock-lvl-7",
     level_number: 7,
-    title: "The Sirens' Song",
-    story_text: "Approaching the island of the Sirens, some of your crew have stopped their ears with wax, seeing only blurred shapes. Others must listen to the song and pluck the golden words from the deceptive lyrics.",
+    title: "The Distorted Signal",
+    story_text: "A scrambled radio signal is playing. Some of your crew hear blurred noise. Others must listen carefully to extract the hidden code from the deceptive transmission.",
     puzzle_type: "split_blurred",
-    puzzle_data: { clear_text: "TRUST NO SONG", waves: 3 },
-    correct_answer: "TRUST NO SONG",
+    puzzle_data: { clear_text: "TRUST NO SIGNAL", waves: 3 },
+    correct_answer: "TRUST NO SIGNAL",
     is_locked: false
   },
   {
     id: "mock-lvl-8",
     level_number: 8,
-    title: "Scylla and Charybdis",
-    story_text: "You face a terrible choice. Sail close to the six-headed monster Scylla and lose some crew, or risk the whirlpool Charybdis and lose the entire ship. Commit to a path and solve its trial.",
+    title: "The Double Threat",
+    story_text: "You face a terrible choice. Take the left path and face a barrage of traps, or take the right path and risk losing everything. Commit to a path and solve its trial.",
     puzzle_type: "animated_fork",
     puzzle_data: { paths: { A: { q: "A ship holds 6 crates. Half are unloaded, then 2 more are added. How many crates now?", a: "5" }, B: { q: "A rope is 9 meters. It's cut into 3 equal pieces, then one piece is cut in half. How long is that half-piece?", a: "1.5" } } },
     correct_answer: "DEPENDS_ON_PATH",
@@ -88,8 +88,8 @@ export const SEED_LEVELS = [
   {
     id: "mock-lvl-9",
     level_number: 9,
-    title: "The Cattle of Helios",
-    story_text: "Your starving crew eyes the sacred cattle of the Sun God. A glowing altar offers a tempting shortcut, but beware the wrath of Helios. Solve the logic puzzle carefully.",
+    title: "The Glowing Altar",
+    story_text: "Your starving crew eyes a glowing altar. It offers a tempting shortcut, but beware the hidden trap. Solve the logic puzzle carefully.",
     puzzle_type: "tempting_glow",
     puzzle_data: { setup_q: "A number doubled is 20. Another number tripled is 30. What are the two numbers?", main_q: "Subtract the second number from the first." },
     correct_answer: "0",
@@ -98,12 +98,11 @@ export const SEED_LEVELS = [
   {
     id: "mock-lvl-10",
     level_number: 10,
-    title: "Return to Ithaca",
-    story_text: "You have finally reached the shores of Ithaca. One last trial remains: align the stars perfectly and recall your past journey to prove you are the true king.",
+    title: "The Final Gauntlet",
+    story_text: "You have reached the final challenge. The door is secured by an ancient combination lock and a test of skill. Prove your worth.",
     puzzle_type: "timing_bar",
-    puzzle_data: { combination_clue: "Take your Level 3 answer. Take the direction opposite of where the sun rises. Combine both, separated by a space." },
-    correct_answer: "NOBODY WEST",
+    puzzle_data: { targets: 12, speed: 2.5 },
+    correct_answer: "VICTORY",
     is_locked: false
   }
 ];
-

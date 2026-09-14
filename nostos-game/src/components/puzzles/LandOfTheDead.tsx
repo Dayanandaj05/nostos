@@ -19,7 +19,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
   const [solved, setSolved] = useState(false);
   const [broadcasted, setBroadcasted] = useState(false);
 
-  const { broadcastChatMessage, deviceAlias } = useTeamSync();
+  const { broadcastChatMessage, deviceAlias, memberNames } = useTeamSync();
   
   // Local state for the mini-puzzles
   const [riddleInput, setRiddleInput] = useState("");
@@ -36,7 +36,9 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
         sessionStorage.setItem("nostos_device_token", token);
       }
 
-      const variantsList = data.variants && data.variants.length > 0 ? data.variants : ["FIND", "THE", "ROAD", "HOME"];
+      const activeSize = Math.max(2, memberNames?.length || 2);
+      const baseVariantsList = data.variants && data.variants.length > 0 ? data.variants : ["OPEN", "THE", "DOOR", "NOW"];
+      const variantsList = baseVariantsList.slice(0, activeSize);
 
       // 2. Check cached variant in sessionStorage for instant 0ms load
       const cached = sessionStorage.getItem(`nostos_variant_${levelId}`);

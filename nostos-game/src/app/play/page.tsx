@@ -174,7 +174,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
              </p>
            </div>
         </main>
-        <CrewChat levelId="finished" levelNumber={10} />
+        <CrewChat levelId="finished" levelNumber={10} teamId={teamId} />
       </TeamSyncProvider>
     );
   }
