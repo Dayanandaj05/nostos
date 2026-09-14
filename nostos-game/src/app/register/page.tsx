@@ -179,7 +179,7 @@ export default function RegisterPage() {
                     name="captain_phone" 
                     type="tel"
                     isError={!!state.errors?.captain_phone}
-                    placeholder="Indian Phone Number (e.g. +91 9876543210)" 
+                    placeholder="Phone Number (e.g. +91 9876543210)" 
                   />
                   {state.errors?.captain_phone && (
                     <p className="text-danger italic text-sm mt-1">{state.errors.captain_phone}</p>

@@ -51,7 +51,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
 
     const isValidIndianMobile = /^[6-9]\d{9}$/.test(clean);
     if (!isValidIndianMobile) {
-      errors.captain_phone = "Please enter a valid 10-digit Indian mobile number (e.g. 9876543210 or +91 9876543210).";
+      errors.captain_phone = "Please enter a valid 10-digit phone number (e.g. 9876543210 or +91 9876543210).";
     }
   }
 
