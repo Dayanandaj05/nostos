@@ -8,9 +8,111 @@ import { submitAnswer, SubmitState } from "@/app/actions/submitAnswer";
 import { confirmAdvance } from "@/app/actions/confirmAdvance";
 import { PuzzleRegistry } from "@/components/puzzles/PuzzleRegistry";
 import { CrewChat } from "@/components/game/CrewChat";
-import { TrialVictoryModal } from "@/components/game/TrialVictoryModal";
 import { TeamSyncProvider, useTeamSync } from "@/components/game/TeamSyncProvider";
-import { CheckCircle2, Circle, Users, Anchor } from "lucide-react";
+import { CheckCircle2, Circle, Users, Anchor, Compass } from "lucide-react";
+
+const TRIAL_BRIEFING_DATA: Record<number, { title: string; subtitle: string; isTeamwork: boolean; guidelines: string[] }> = {
+  1: {
+    title: "Trial 1: The Lotus-Eaters",
+    subtitle: "The Island of Forgetting",
+    isTeamwork: false,
+    guidelines: [
+      "Your crew is succumbing to the lotus flowers and forgetting their home.",
+      "Decode the ancient scrolls using the cryptographic wheel.",
+      "Submit the true path to the Oracle before time runs out."
+    ]
+  },
+  2: {
+    title: "Trial 2: Island of Aeolus",
+    subtitle: "The Keeper of the Winds",
+    isTeamwork: false,
+    guidelines: [
+      "Tap the golden wind icons hidden among the storm clouds.",
+      "Collect wind coordinates before the divine gale blows your vessel off course.",
+      "Calculate the resulting vector to state your answer to the Oracle."
+    ]
+  },
+  3: {
+    title: "Trial 3: The Cyclops' Cave",
+    subtitle: "Escape from Polyphemus",
+    isTeamwork: false,
+    guidelines: [
+      "Polyphemus traps your fleet inside a dark cavern.",
+      "Inspect the cave walls to locate hidden tools and objects.",
+      "Use your items strategically to blind the giant and escape under the rams."
+    ]
+  },
+  4: {
+    title: "Trial 4: Land of the Laestrygonians",
+    subtitle: "The Boulder Fleet Strait",
+    isTeamwork: false,
+    guidelines: [
+      "Giant cannibals hurl massive boulders from the coastal cliffs!",
+      "Solve rapid nautical & mathematical calculations within 35 seconds per round.",
+      "Maneuver your ship through the straits before your fleet is destroyed."
+    ]
+  },
+  5: {
+    title: "Trial 5: Circe's Enchanted Isle",
+    subtitle: "The Swine & The Holy Herb",
+    isTeamwork: false,
+    guidelines: [
+      "Circe's witchery has transformed your sailors into swine inside her palace.",
+      "Select tools from your equipment bar (Sickle, Torch, Key, Ladle).",
+      "Interact with the palace elements to uncover the magical antidote herb."
+    ]
+  },
+  6: {
+    title: "Trial 6: Land of the Dead",
+    subtitle: "The Underworld Asymmetric Split",
+    isTeamwork: true,
+    guidelines: [
+      "TEAMWORK REQUIRED: The Shades assign DIFFERENT riddle fragments to each device on your team.",
+      "Use the 'Crew Telepathy' chat at the bottom right to share unlocked word fragments with your crew.",
+      "Combine all team fragments to form the full passcode and unlock the Underworld Gate."
+    ]
+  },
+  7: {
+    title: "Trial 7: The Sirens' Song",
+    subtitle: "Sensory Role Separation",
+    isTeamwork: true,
+    guidelines: [
+      "TEAMWORK REQUIRED: Only ONE crew member has clear hearing to see the floating melody words.",
+      "All other team devices are deafened (blurred screen) by the Sirens' enchanting spell.",
+      "The hearing sailor must click clear words to transmit them to the crew's shared tray!"
+    ]
+  },
+  8: {
+    title: "Trial 8: Scylla & Charybdis",
+    subtitle: "The Sea Monster & The Whirlpool",
+    isTeamwork: false,
+    guidelines: [
+      "Navigate between the 6-headed monster Scylla and the roaring whirlpool Charybdis.",
+      "Path selection is instant: choose your risk level carefully.",
+      "Answer the rapid tactical dilemma to steer through the narrow strait safely."
+    ]
+  },
+  9: {
+    title: "Trial 9: Cattle of Helios",
+    subtitle: "Resisting Divine Temptation",
+    isTeamwork: false,
+    guidelines: [
+      "Your starving crew lands on Thrinacia where the Sun God's cattle graze.",
+      "Do NOT slaughter the golden cattle! Resist the glowing temptation.",
+      "Calculate the exact sacred herd equation to honor Lord Helios."
+    ]
+  },
+  10: {
+    title: "Trial 10: Return to Ithaca",
+    subtitle: "The Odyssey Grand Finale",
+    isTeamwork: false,
+    guidelines: [
+      "Phase 1: Decode Penelope's story clue to discover Odysseus' disguise.",
+      "Phase 2: Uncover the Odyssey Lore combination lock from your voyage knowledge.",
+      "Phase 3: Interactive 2D Canvas Bow & Arrow game! Aim and shoot through the 12 axe handles to claim victory!"
+    ]
+  }
+};
 
 interface GameEngineProps {
   level: any;
@@ -20,7 +122,7 @@ interface GameEngineProps {
   memberNames?: string[];
 }
 
-function ReadinessGate({ onReady }: { onReady: () => void }) {
+function ReadinessGate({ levelNumber, onReady }: { levelNumber: number, onReady: () => void }) {
   const { connectedMembers, readyMembers, memberNames, deviceAlias } = useTeamSync();
   const amIReady = readyMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase());
 
@@ -28,15 +130,43 @@ function ReadinessGate({ onReady }: { onReady: () => void }) {
     ? memberNames 
     : connectedMembers.map(m => m.alias);
 
+  const briefing = TRIAL_BRIEFING_DATA[levelNumber] || {
+    title: `Trial ${levelNumber}`,
+    subtitle: "Unknown Waters",
+    isTeamwork: false,
+    guidelines: ["Rely on your wits to survive."]
+  };
+
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 relative z-10 text-center">
-      <Users className="w-16 h-16 text-gold mx-auto opacity-80" />
-      <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">The Crew Must Gather</h2>
-      <p className="text-parchment/70 font-serif text-lg italic max-w-lg mx-auto">
-        The gods demand unity. All present sailors must confirm they are ready before the trial begins.
-      </p>
+    <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500 relative z-10 text-center">
+      <Compass className="w-16 h-16 text-gold mx-auto opacity-80 animate-pulse" />
+      <div>
+        <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">{briefing.title}</h2>
+        <p className="text-parchment/70 font-serif text-lg italic">{briefing.subtitle}</p>
+      </div>
+
+      <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md text-left space-y-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-gold/10 pb-3">
+          <span className="text-gold font-serif text-xs uppercase tracking-widest font-bold">Tactical Guidelines</span>
+          {briefing.isTeamwork && (
+            <span className="px-3 py-1 bg-gold/20 border border-gold/50 rounded-full text-gold font-serif text-[11px] uppercase tracking-widest font-bold flex items-center space-x-1">
+              <Users className="w-3 h-3" />
+              <span>Teamwork Required</span>
+            </span>
+          )}
+        </div>
+        <ul className="space-y-2">
+          {briefing.guidelines.map((g, idx) => (
+            <li key={idx} className="text-parchment/90 font-serif text-sm flex items-start space-x-2">
+              <span className="text-gold font-bold">►</span>
+              <span>{g}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
+        <h3 className="text-xs uppercase tracking-widest text-parchment/50 font-bold mb-4 border-b border-gold/10 pb-2">Crew Readiness</h3>
         <ul className="space-y-4">
           {crewList.map(name => {
             const isReady = readyMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isReady);
@@ -59,7 +189,7 @@ function ReadinessGate({ onReady }: { onReady: () => void }) {
 
       {!amIReady ? (
         <Button onClick={onReady} className="w-full py-4 text-xl">
-          I am ready
+          Begin Trial
         </Button>
       ) : (
         <p className="text-gold/80 font-serif italic animate-pulse">Waiting for the rest of the crew...</p>
@@ -69,7 +199,7 @@ function ReadinessGate({ onReady }: { onReady: () => void }) {
 }
 
 function CompletionGate({ levelNumber }: { levelNumber: number }) {
-  const { connectedMembers, doneMembers, memberNames, deviceAlias, markDone } = useTeamSync();
+  const { connectedMembers, doneMembers, memberNames, deviceAlias, markDone, broadcastLevelAdvance } = useTeamSync();
   const [isPending, startTransition] = useTransition();
 
   const amIDone = doneMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase() && m.isDone);
@@ -78,29 +208,39 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
     ? memberNames
     : connectedMembers.map(m => m.alias);
 
-  // We must wait for ALL registered crew members. If someone drops offline, they must 
-  // reconnect and mark done. This strictly enforces the "everyone must solve individually" rule.
   const activeMembersToWait = registeredCrew;
 
   const isEveryoneDone = activeMembersToWait.length > 0 && activeMembersToWait.every(name => 
     doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
   );
 
-  const handleMarkDone = () => {
-    markDone(true);
-  };
+  // Auto-mark done when reaching this gate
+  React.useEffect(() => {
+    if (!amIDone) {
+      markDone(true);
+    }
+  }, [amIDone, markDone]);
 
-  // When everyone is done, render the TrialVictoryModal briefing
-  if (isEveryoneDone) {
-    return <TrialVictoryModal currentLevelNumber={levelNumber} onProceed={() => { /* Transition handled by realtime router.refresh */ }} />;
-  }
+  // Auto-advance when everyone is done
+  React.useEffect(() => {
+    if (isEveryoneDone && !isPending) {
+      startTransition(async () => {
+        try {
+          broadcastLevelAdvance(levelNumber + 1);
+          await confirmAdvance(levelNumber);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+  }, [isEveryoneDone, isPending, levelNumber, broadcastLevelAdvance]);
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 relative z-10 text-center">
       <Anchor className="w-16 h-16 text-gold mx-auto opacity-80" />
       <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">The Trial is Bested</h2>
       <p className="text-parchment/70 font-serif text-lg italic max-w-lg mx-auto">
-        The answer was true. Before setting sail to Trial {levelNumber + 1}, all registered crew members must confirm completion.
+        Your answer was true. Wait for your crew to finish their trials before setting sail.
       </p>
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
@@ -127,17 +267,11 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
         </ul>
       </Card>
 
-      {!amIDone ? (
-        <Button onClick={handleMarkDone} className="w-full py-4 text-xl font-bold">
-          Mark My Part Done
-        </Button>
-      ) : (
-        <div className="space-y-4">
-          <p className="text-gold/80 font-serif italic animate-pulse text-lg">
-            Waiting for all registered crew members to complete the trial...
-          </p>
-        </div>
-      )}
+      <div className="space-y-4 mt-8">
+        <p className="text-gold/80 font-serif italic animate-pulse text-lg">
+          Waiting for all registered crew members to complete the trial...
+        </p>
+      </div>
     </div>
   );
 }
@@ -184,7 +318,7 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
   if (!isAllReady) {
     return (
       <div className="w-full">
-        <ReadinessGate onReady={() => markReady(true)} />
+        <ReadinessGate levelNumber={level.level_number} onReady={() => markReady(true)} />
       </div>
     );
   }
