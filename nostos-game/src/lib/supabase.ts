@@ -38,6 +38,8 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production' && !g
 }
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const customInit = { ...init, cache: "no-store" as RequestCache };
+  
   if (process.env.NODE_ENV !== "production") {
     // Instant reject if we already know Supabase is offline
     if (globalThis._nostos_isOffline) {
@@ -45,13 +47,13 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     }
 
     const controller = new AbortController();
-    if (init?.signal) {
-      init.signal.addEventListener('abort', () => controller.abort());
+    if (customInit?.signal) {
+      customInit.signal.addEventListener('abort', () => controller.abort());
     }
     // Fast 150ms timeout in dev mode so offline Supabase never hangs page loads
     const timeoutId = setTimeout(() => controller.abort("Forced Timeout"), 150);
 
-    return fetch(input, { ...init, signal: controller.signal })
+    return fetch(input, { ...customInit, signal: controller.signal })
       .then(res => {
         clearTimeout(timeoutId);
         globalThis._nostos_isOffline = false;
@@ -63,7 +65,7 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
         throw new Error("Supabase is offline (cached)");
       });
   }
-  return fetch(input, init);
+  return fetch(input, customInit);
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

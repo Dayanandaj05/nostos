@@ -37,21 +37,29 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   try {
     const t0 = Date.now();
     // 1. Get current progress — use maybeSingle so missing row doesn't throw
-    const { data: progData } = await supabase
+    const { data: progData, error: progErr } = await supabase
       .from("progress")
       .select("current_level, incorrect_count, correct_count")
       .eq("team_id", teamId)
       .maybeSingle();
 
+    if (progErr) {
+      console.error("[submitAnswer] progress fetch error:", progErr);
+    }
+
     if (progData) {
       progress = progData;
-    } else {
+    } else if (!progErr) {
       // Row missing — create it now so the answer can be processed
-      const { data: inserted } = await supabase
+      const { data: inserted, error: insertErr } = await supabase
         .from("progress")
         .insert([{ team_id: teamId, current_level: 1, first_login_at: new Date().toISOString() }])
         .select("current_level, incorrect_count, correct_count")
         .single();
+      
+      if (insertErr) {
+        console.error("[submitAnswer] progress insert error:", insertErr);
+      }
       if (inserted) progress = inserted;
     }
     const t1 = Date.now();
