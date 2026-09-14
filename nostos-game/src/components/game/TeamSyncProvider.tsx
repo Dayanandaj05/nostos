@@ -81,10 +81,10 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
   }, [router, levelNumber]);
 
   useEffect(() => {
-    let token = localStorage.getItem("nostos_device_token");
+    let token = sessionStorage.getItem("nostos_device_token");
     if (!token) {
       token = crypto.randomUUID();
-      localStorage.setItem("nostos_device_token", token);
+      sessionStorage.setItem("nostos_device_token", token);
     }
     setDeviceToken(token);
     const alias = username;

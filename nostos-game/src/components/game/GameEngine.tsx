@@ -276,7 +276,7 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
   );
 }
 
-function GameEngineInner({ level, progress }: GameEngineProps) {
+function GameEngineInner({ level, progress, teamId, username }: GameEngineProps) {
   const [state, formAction, isPendingForm] = useActionState<SubmitState, FormData>(submitAnswer, { success: false });
   const formRef = useRef<HTMLFormElement>(null);
   const { connectedMembers, readyMembers, markReady } = useTeamSync();
@@ -284,21 +284,22 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
   const currentIncorrectCount = state.incorrect_count ?? progress.incorrect_count;
   
   const [localSolved, setLocalSolved] = useState(false);
+  const storageKey = `nostos_solved_${teamId}_${username}_${level.id}`;
 
   React.useEffect(() => {
     if (state.success) {
-      try { localStorage.setItem(`nostos_solved_${level.id}`, 'true'); } catch (e) {}
+      try { sessionStorage.setItem(storageKey, 'true'); } catch (e) {}
       setLocalSolved(true);
     } else {
       try {
-        if (localStorage.getItem(`nostos_solved_${level.id}`) === 'true') {
+        if (sessionStorage.getItem(storageKey) === 'true') {
           setLocalSolved(true);
         } else {
           setLocalSolved(false);
         }
       } catch (e) {}
     }
-  }, [state.success, level.id]);
+  }, [state.success, storageKey]);
 
   // A puzzle is successfully solved if either the global progress says so (from the team advancing)
   // or our local state says so (we personally solved it).
