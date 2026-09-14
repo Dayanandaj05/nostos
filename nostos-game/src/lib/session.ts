@@ -45,15 +45,15 @@ export function isUserCurrentlyLoggedIn(teamId: string, username: string, curren
   const isRecent = Date.now() - existing.lastActiveAt < 2 * 60 * 1000;
   if (!isRecent) return false;
 
-  // If it's the exact same device token, allow re-login/refresh on same device
-  if (currentDeviceToken && existing.deviceToken === currentDeviceToken) {
+  // If existing session has no recorded deviceToken, or matches current deviceToken, allow re-login on same device
+  if (!existing.deviceToken || (currentDeviceToken && existing.deviceToken === currentDeviceToken)) {
     return false;
   }
 
   return true;
 }
 
-export function updateSessionHeartbeat(teamId: string, username: string, sessionId?: string): boolean {
+export function updateSessionHeartbeat(teamId: string, username: string, sessionId?: string, deviceToken?: string): boolean {
   const key = `${teamId}:${username.trim().toLowerCase()}`;
   const existing = getActiveSessionsMap().get(key);
   
@@ -62,13 +62,14 @@ export function updateSessionHeartbeat(teamId: string, username: string, session
       return false; // Actually a different session trying to heartbeat
     }
     existing.lastActiveAt = Date.now();
+    if (deviceToken) existing.deviceToken = deviceToken;
     return true;
   }
   
   // VERCEL SERVERLESS FIX: If the global Map is empty (e.g. cold start),
   // we must re-initialize the session in memory instead of rejecting it!
   if (sessionId) {
-    setActiveSession(teamId, username, sessionId, undefined);
+    setActiveSession(teamId, username, sessionId, deviceToken);
     return true;
   }
 

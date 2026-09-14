@@ -85,6 +85,7 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
 
   console.log(`[auth.ts] Valid member ${username}. Checking active sessions...`);
 
+  await ensureDeviceToken();
   const cookieStore = await cookies();
   const deviceToken = cookieStore.get("device_token")?.value;
 
@@ -98,13 +99,9 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
     };
   }
 
-  await ensureDeviceToken();
-  const activeCookieStore = await cookies();
-  const finalDeviceToken = activeCookieStore.get("device_token")?.value || deviceToken;
-
   // Generate unique session ID for single-device tracking
   const sessionId = crypto.randomUUID();
-  setActiveSession(team.id, username, sessionId, finalDeviceToken);
+  setActiveSession(team.id, username, sessionId, deviceToken);
 
   // Create session
   await createSession({ role: "team", id: team.id, ship_name, username, sessionId });
@@ -118,7 +115,10 @@ export async function sessionHeartbeat() {
     return { active: false };
   }
 
-  const active = updateSessionHeartbeat(session.id, session.username, session.sessionId);
+  const cookieStore = await cookies();
+  const deviceToken = cookieStore.get("device_token")?.value;
+
+  const active = updateSessionHeartbeat(session.id, session.username, session.sessionId, deviceToken);
   if (!active) {
     return { active: false };
   }
