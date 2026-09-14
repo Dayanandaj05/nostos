@@ -41,10 +41,11 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
   const isBoundRef = useRef(false);
 
   useEffect(() => {
-    // 1. Remote Supabase Broadcast Listener
-    if (channelRef && !isBoundRef.current) {
+    // 1. Remote Supabase Broadcast Listener — bind once the channel is available
+    const channel = channelRef.current?.channel;
+    if (channel && !isBoundRef.current) {
       isBoundRef.current = true;
-      channelRef.on('broadcast', { event: 'new_message' }, (payload: any) => {
+      channel.on('broadcast', { event: 'new_message' }, (payload: any) => {
         const newMsg: ChatMessage = payload.payload;
         setMessages(prev => {
           if (prev.some(m => m.id === newMsg.id)) return prev;
@@ -76,7 +77,8 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
     return () => {
       window.removeEventListener('nostos_chat_message', handleLocalMsg);
     };
-  }, [channelRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channelRef.current?.channel]);
 
   // Auto scroll
   useEffect(() => {
@@ -103,13 +105,11 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
 
     setMessages(prev => [...prev, newMsg]);
 
-    if (channelRef) {
-      channelRef.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: newMsg
-      });
-    }
+    channelRef.current?.channel?.send({
+      type: 'broadcast',
+      event: 'new_message',
+      payload: newMsg
+    });
 
     setInputText("");
   };
@@ -123,13 +123,11 @@ export function CrewChat({ levelId, levelNumber }: { levelId: string, levelNumbe
     };
 
     setMessages(prev => [...prev, newMsg]);
-    if (channelRef) {
-      channelRef.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: newMsg
-      });
-    }
+    channelRef.current?.channel?.send({
+      type: 'broadcast',
+      event: 'new_message',
+      payload: newMsg
+    });
   };
 
   const handleProposeAid = () => {

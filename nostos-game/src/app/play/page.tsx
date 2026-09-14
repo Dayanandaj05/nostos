@@ -34,7 +34,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
   const teamId = session.id;
 
   // 1. Fetch team progress and registered member names with fallback
-  let progress: { current_level: number; incorrect_count: number; aid_tokens: number; pending_advance: boolean } | null = null;
+  let progress: { current_level: number; incorrect_count: number; aid_tokens: number } | null = null;
   let memberNames: string[] = [];
 
   try {
@@ -50,7 +50,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
 
     const { data, error } = await supabase
       .from("progress")
-      .select("current_level, incorrect_count, aid_tokens, pending_advance")
+      .select("current_level, incorrect_count, aid_tokens")
       .eq("team_id", teamId)
       .maybeSingle();
 
@@ -64,7 +64,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
           current_level: 1, 
           first_login_at: new Date().toISOString() 
         }])
-        .select("current_level, incorrect_count, aid_tokens, pending_advance")
+        .select("current_level, incorrect_count, aid_tokens")
         .single();
       if (newProgress && !insertErr) progress = newProgress;
     }

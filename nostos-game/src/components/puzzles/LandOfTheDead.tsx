@@ -29,17 +29,17 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
     let isMounted = true;
 
     async function initVariant() {
-      // 1. Get or create a device token in localStorage
-      let token = localStorage.getItem("nostos_device_token");
+      // 1. Get or create a device token in sessionStorage
+      let token = sessionStorage.getItem("nostos_device_token");
       if (!token) {
         token = crypto.randomUUID();
-        localStorage.setItem("nostos_device_token", token);
+        sessionStorage.setItem("nostos_device_token", token);
       }
 
       const variantsList = data.variants && data.variants.length > 0 ? data.variants : ["THE", "ROAD", "HOME"];
 
-      // 2. Check cached variant in localStorage for instant 0ms load
-      const cached = localStorage.getItem(`nostos_variant_${levelId}`);
+      // 2. Check cached variant in sessionStorage for instant 0ms load
+      const cached = sessionStorage.getItem(`nostos_variant_${levelId}`);
       if (cached && variantsList.includes(cached)) {
         if (isMounted) {
           setVariant(cached);
@@ -67,7 +67,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
 
         if (result && result.variant_key && isMounted) {
           setVariant(result.variant_key);
-          localStorage.setItem(`nostos_variant_${levelId}`, result.variant_key);
+          sessionStorage.setItem(`nostos_variant_${levelId}`, result.variant_key);
         }
       } catch {
         // Silently use instant fallback

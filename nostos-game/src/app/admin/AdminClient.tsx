@@ -181,15 +181,22 @@ export function AdminClient({ teams, levels, logs, currentUsername }: any) {
               )}
             </div>
 
-            <form onSubmit={handleAddLog} className="mt-auto">
+            <form onSubmit={handleAddLog} className="mt-auto flex gap-2">
               <input 
                 type="text"
                 placeholder="Log an incident or note..."
                 value={logInput}
                 onChange={e => setLogInput(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full bg-black border border-gold/30 focus:border-gold/80 px-3 py-2 rounded text-sm text-parchment outline-none font-serif"
+                className="flex-1 bg-black border border-gold/30 focus:border-gold/80 px-3 py-2 rounded text-sm text-parchment outline-none font-serif"
               />
+              <button
+                type="submit"
+                disabled={isSubmitting || !logInput.trim()}
+                className="px-3 py-2 bg-gold/10 hover:bg-gold/20 border border-gold/50 rounded text-gold text-xs uppercase tracking-widest disabled:opacity-40 transition-colors"
+              >
+                {isSubmitting ? '...' : 'Log'}
+              </button>
             </form>
           </div>
         </div>

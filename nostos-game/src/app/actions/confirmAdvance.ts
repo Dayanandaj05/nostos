@@ -10,7 +10,7 @@ export async function confirmAdvance(fromLevelNumber?: number) {
 
   const { data: currentProgress, error: fetchError } = await supabase
     .from("progress")
-    .select("current_level, pending_advance")
+    .select("current_level")
     .eq("team_id", teamId)
     .single();
 

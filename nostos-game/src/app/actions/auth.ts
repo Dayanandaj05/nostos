@@ -124,26 +124,24 @@ export async function sessionHeartbeat() {
   }
 
   let currentLevel: number | undefined;
-  let pendingAdvance: boolean | undefined;
 
   if (session.role === "team") {
     try {
       const { data } = await supabase
         .from("progress")
-        .select("current_level, pending_advance")
+        .select("current_level")
         .eq("team_id", session.id)
         .maybeSingle();
 
       if (data) {
         currentLevel = data.current_level;
-        pendingAdvance = data.pending_advance;
       }
     } catch (e) {
       // ignore offline errors
     }
   }
 
-  return { active: true, currentLevel, pendingAdvance };
+  return { active: true, currentLevel };
 }
 
 export async function logoutTeam() {

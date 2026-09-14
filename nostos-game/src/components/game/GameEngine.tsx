@@ -302,7 +302,7 @@ function GameEngineInner({ level, progress, teamId, username }: GameEngineProps)
 
   // A puzzle is successfully solved if either the global progress says so (from the team advancing)
   // or our local state says so (we personally solved it).
-  const isSolved = progress.pending_advance || localSolved || (state.success && state.completed_level === level.level_number);
+  const isSolved = localSolved || (state.success && state.completed_level === level.level_number);
 
   // The readiness gate is passed if everyone connected has marked ready, or during initial connection load.
   const isAllReady = connectedMembers.length === 0 || readyMembers.length === connectedMembers.length;

@@ -33,7 +33,7 @@ interface TeamSyncContextType {
   broadcastAidProposal: () => void;
   broadcastChatMessage: (text: string, customSender?: string) => void;
   broadcastLevelAdvance: (targetLevel?: number) => void;
-  channelRef: any;
+  channelRef: React.RefObject<any>;
 }
 
 const TeamSyncContext = createContext<TeamSyncContextType | null>(null);
@@ -48,7 +48,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
   const [members, setMembers] = useState<SyncMember[]>([]);
   const [deviceToken, setDeviceToken] = useState<string>("");
   const [deviceAlias, setDeviceAlias] = useState<string>("");
-  const [myState, setMyState] = useState({ isReady: true, isDone: false });
+  const [myState, setMyState] = useState({ isReady: false, isDone: false });
   const channelRef = useRef<any>(null);
   const router = useRouter();
 
@@ -102,9 +102,8 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       }
     });
     
-    channelRef.current = channel;
-
     const myStateRef = { isReady: false, isDone: false };
+    channelRef.current = { channel, myStateRef };
 
     channel
       .on('presence', { event: 'sync' }, () => {
@@ -140,12 +139,6 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         }
       });
 
-    // Provide a way for markReady/markDone to update the ref before subscription
-    channelRef.current = {
-      channel,
-      myStateRef
-    };
-
     // Listen to database changes for progress sync
     const progressChannel = supabase.channel(`progress_sync_${teamId}`)
       .on(
@@ -180,8 +173,6 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         return prev;
       });
     }, 1500);
-
-    channelRef.current = channel;
 
     return () => {
       clearTimeout(fallbackTimer);
@@ -305,7 +296,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       broadcastAidProposal,
       broadcastChatMessage,
       broadcastLevelAdvance,
-      channelRef: channelRef.current?.channel
+      channelRef
     }}>
       {children}
     </TeamSyncContext.Provider>
