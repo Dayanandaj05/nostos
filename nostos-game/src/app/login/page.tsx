@@ -88,7 +88,9 @@ function LoginContent() {
 
         {activeTab === "crew" ? (
           <form action={teamFormAction} className="space-y-8">
-            {teamState.error && <ErrorBanner message={teamState.error} />}
+            {teamState.error && (
+              <ErrorBanner variant="destructive" title="Login Blocked" message={teamState.error} />
+            )}
             
             <div className="space-y-2">
               <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block flex justify-between">

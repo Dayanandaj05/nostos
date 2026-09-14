@@ -81,7 +81,6 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
     };
   }
 
-  await ensureDeviceToken();
   const cookieStore = await cookies();
   const deviceToken = cookieStore.get("device_token")?.value;
 
@@ -89,13 +88,17 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   if (isUserCurrentlyLoggedIn(team.id, username, deviceToken)) {
     return {
       success: false,
-      error: `Sailor "${username}" is already active on another device or tab. Log out on that device to proceed.`
+      error: `Sailor "${username}" is already active on another device or window. Log out on that device to proceed.`
     };
   }
 
+  await ensureDeviceToken();
+  const activeCookieStore = await cookies();
+  const finalDeviceToken = activeCookieStore.get("device_token")?.value || deviceToken;
+
   // Generate unique session ID for single-device tracking
   const sessionId = crypto.randomUUID();
-  setActiveSession(team.id, username, sessionId, deviceToken);
+  setActiveSession(team.id, username, sessionId, finalDeviceToken);
 
   // Create session
   await createSession({ role: "team", id: team.id, ship_name, username, sessionId });
