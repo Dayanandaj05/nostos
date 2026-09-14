@@ -36,6 +36,7 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   }
 
   let team: any = null;
+  console.log(`[auth.ts] loginTeam called with ship_name=${ship_name}, username=${username}`);
   
   try {
     const { data } = await supabase
@@ -60,8 +61,11 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   }
 
   if (!team) {
+    console.log(`[auth.ts] Team not found for ship_name=${ship_name}`);
     return { success: false, error: "No such vessel is registered in our logs." };
   }
+  
+  console.log(`[auth.ts] Found team id=${team.id}`);
 
   const isMatch = await bcrypt.compare(password, team.password_hash);
   if (!isMatch) {
@@ -72,17 +76,22 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   const memberNames: string[] = team.member_names || [];
   const isValidMember = memberNames.length === 0 || memberNames.some(m => m.trim().toLowerCase() === username.toLowerCase());
   if (!isValidMember) {
+    console.log(`[auth.ts] Invalid member ${username}. Member array:`, memberNames);
     return { 
       success: false, 
       error: `Sailor "${username}" is not a registered crew member of "${ship_name}".` 
     };
   }
 
+  console.log(`[auth.ts] Valid member ${username}. Checking active sessions...`);
+
   const cookieStore = await cookies();
   const deviceToken = cookieStore.get("device_token")?.value;
 
   // Check if sailor is already logged in on another device or window
-  if (isUserCurrentlyLoggedIn(team.id, username, deviceToken)) {
+  const isCurrentlyLoggedIn = isUserCurrentlyLoggedIn(team.id, username, deviceToken);
+  console.log(`[auth.ts] isUserCurrentlyLoggedIn = ${isCurrentlyLoggedIn}, deviceToken = ${deviceToken}`);
+  if (isCurrentlyLoggedIn) {
     return {
       success: false,
       error: `Sailor "${username}" is already active on another device or window. Log out on that device to proceed.`
@@ -159,7 +168,7 @@ export async function loginAdmin(prevState: LoginState, formData: FormData): Pro
   try {
     const { data, error } = await supabase
       .from("admins")
-      .select("id, password_hash")
+      .select("id, password_hash, role")
       .eq("username", username)
       .maybeSingle();
 
@@ -177,8 +186,13 @@ export async function loginAdmin(prevState: LoginState, formData: FormData): Pro
     return { success: false, error: "Invalid credentials." };
   }
 
-  await createSession({ role: "admin", id: admin.id, username });
-  redirect("/admin");
+  await createSession({ role: admin.role, id: admin.id, username });
+  
+  if (admin.role === "admin") {
+    redirect("/admin");
+  } else {
+    redirect("/volunteer");
+  }
 }
 
 // Development quick-login endpoints
