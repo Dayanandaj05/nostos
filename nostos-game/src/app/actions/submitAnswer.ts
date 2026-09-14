@@ -60,8 +60,26 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     console.warn("Supabase unavailable for answer submission, using dev fallback state:", err);
   }
 
+  // Fallbacks if Supabase is offline
+  if (!progress) {
+    const { mockDevProgressState } = require("@/lib/mockData");
+    if (!mockDevProgressState[teamId]) {
+      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, correct_count: 0 };
+    }
+    progress = mockDevProgressState[teamId];
+  }
+
   if (!progress) {
     return { success: false, error: "Unable to retrieve your progress. Try again." };
+  }
+
+  if (!level) {
+    const seed = SEED_LEVELS.find(l => l.level_number === progress!.current_level) || SEED_LEVELS[0];
+    level = {
+      id: seed.id,
+      correct_answer: seed.correct_answer,
+      is_locked: seed.is_locked
+    };
   }
 
   if (!level) {
@@ -138,7 +156,12 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     }
 
     if (!dbSuccess) {
-      return { success: false, error: "Failed to save your progress." };
+      const { mockDevProgressState } = require("@/lib/mockData");
+      mockDevProgressState[teamId] = {
+        current_level: currentLevel,
+        correct_count: (progress.correct_count || 0) + 1,
+        incorrect_count: progress.incorrect_count || 0
+      };
     }
 
     revalidatePath("/play");
