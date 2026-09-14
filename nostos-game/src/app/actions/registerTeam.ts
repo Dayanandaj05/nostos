@@ -44,9 +44,14 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
   if (!captain_phone) {
     errors.captain_phone = "The Captain must provide a phone number.";
   } else {
-    const cleanPhone = captain_phone.replace(/[\s\-\(\)\+]/g, "");
-    if (cleanPhone.length < 7 || cleanPhone.length > 15 || !/^\d+$/.test(cleanPhone)) {
-      errors.captain_phone = "Please enter a valid phone number (7-15 digits).";
+    let clean = captain_phone.replace(/[\s\-\(\)]/g, "");
+    if (clean.startsWith("+91")) clean = clean.slice(3);
+    else if (clean.startsWith("91") && clean.length === 12) clean = clean.slice(2);
+    else if (clean.startsWith("0") && clean.length === 11) clean = clean.slice(1);
+
+    const isValidIndianMobile = /^[6-9]\d{9}$/.test(clean);
+    if (!isValidIndianMobile) {
+      errors.captain_phone = "Please enter a valid 10-digit Indian mobile number (e.g. 9876543210 or +91 9876543210).";
     }
   }
 
