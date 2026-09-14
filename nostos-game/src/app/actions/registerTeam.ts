@@ -67,23 +67,30 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
           first_login_at: new Date().toISOString()
         }]);
     }
-  } catch (e) {
-    console.warn("Supabase unavailable, using offline fallback for registration.");
+  } catch (e: any) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Supabase unavailable, using offline fallback for registration.");
 
-    const globalForDev = globalThis as unknown as { mockDevTeams?: any[]; mockDevProgress?: Record<string, any> };
-    globalForDev.mockDevTeams = globalForDev.mockDevTeams || [];
-    globalForDev.mockDevProgress = globalForDev.mockDevProgress || {};
+      const globalForDev = globalThis as unknown as { mockDevTeams?: any[]; mockDevProgress?: Record<string, any> };
+      globalForDev.mockDevTeams = globalForDev.mockDevTeams || [];
+      globalForDev.mockDevProgress = globalForDev.mockDevProgress || {};
 
-    if (globalForDev.mockDevTeams.find((t: any) => t.ship_name.toLowerCase() === ship_name!.toLowerCase())) {
-      return { success: false, errors: { ship_name: "That ship is already sailing these waters." } };
+      if (globalForDev.mockDevTeams.find((t: any) => t.ship_name.toLowerCase() === ship_name!.toLowerCase())) {
+        return { success: false, errors: { ship_name: "That ship is already sailing these waters." } };
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const password_hash = await bcrypt.hash(password!, salt);
+      const mockId = crypto.randomUUID();
+
+      globalForDev.mockDevTeams.push({ id: mockId, ship_name, password_hash, member_names });
+      globalForDev.mockDevProgress[mockId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3 };
+      
+      return { success: true };
+    } else {
+      console.error("[registerTeam] Fatal error during registration:", e);
+      return { success: false, errors: { general: "The Oracle rejected your registration. " + (e?.message || "Unknown error") } };
     }
-
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password!, salt);
-    const mockId = crypto.randomUUID();
-
-    globalForDev.mockDevTeams.push({ id: mockId, ship_name, password_hash, member_names });
-    globalForDev.mockDevProgress[mockId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3 };
   }
 
   return { success: true };
