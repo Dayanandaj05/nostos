@@ -247,7 +247,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
       </header>
 
       {/* The Engine */}
-      <GameEngine level={level} progress={progress} teamId={teamId} username={session.username || "Sailor"} memberNames={memberNames} />
+      <GameEngine level={level} progress={activeProgress} teamId={teamId} username={session.username || "Sailor"} memberNames={memberNames} />
 
     </main>
   );

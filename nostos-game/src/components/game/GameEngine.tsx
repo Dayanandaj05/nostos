@@ -9,7 +9,7 @@ import { confirmAdvance } from "@/app/actions/confirmAdvance";
 import { PuzzleRegistry } from "@/components/puzzles/PuzzleRegistry";
 import { CrewChat } from "@/components/game/CrewChat";
 import { TeamSyncProvider, useTeamSync } from "@/components/game/TeamSyncProvider";
-import { CheckCircle2, Circle, Users, Anchor, Compass } from "lucide-react";
+import { CheckCircle2, Circle, Users, Anchor, Compass, UserX } from "lucide-react";
 
 const TRIAL_BRIEFING_DATA: Record<number, { title: string; subtitle: string; isTeamwork: boolean; guidelines: string[] }> = {
   1: {
@@ -120,15 +120,14 @@ interface GameEngineProps {
   teamId: string;
   username: string;
   memberNames?: string[];
+  absentMembers?: string[];
 }
 
 function ReadinessGate({ levelNumber, onReady }: { levelNumber: number, onReady: () => void }) {
-  const { connectedMembers, readyMembers, memberNames, deviceAlias } = useTeamSync();
+  const { connectedMembers, readyMembers, activeMemberNames, deviceAlias } = useTeamSync();
   const amIReady = readyMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase());
 
-  const crewList = (memberNames && memberNames.length > 0) 
-    ? memberNames 
-    : connectedMembers.map(m => m.alias);
+  const crewList = activeMemberNames.length > 0 ? activeMemberNames : connectedMembers.map(m => m.alias);
 
   const briefing = TRIAL_BRIEFING_DATA[levelNumber] || {
     title: `Trial ${levelNumber}`,
@@ -199,18 +198,14 @@ function ReadinessGate({ levelNumber, onReady }: { levelNumber: number, onReady:
 }
 
 function CompletionGate({ levelNumber }: { levelNumber: number }) {
-  const { connectedMembers, doneMembers, memberNames, deviceAlias, markDone, broadcastLevelAdvance } = useTeamSync();
+  const { connectedMembers, doneMembers, activeMemberNames, deviceAlias, markDone } = useTeamSync();
   const [isPending, startTransition] = useTransition();
 
   const amIDone = doneMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase() && m.isDone);
 
-  const registeredCrew = (memberNames && memberNames.length > 0)
-    ? memberNames
-    : connectedMembers.map(m => m.alias);
+  const registeredCrew = activeMemberNames.length > 0 ? activeMemberNames : connectedMembers.map(m => m.alias);
 
-  const activeMembersToWait = registeredCrew;
-
-  const isEveryoneDone = activeMembersToWait.length > 0 && activeMembersToWait.every(name => 
+  const isEveryoneDone = registeredCrew.length > 0 && registeredCrew.every(name =>
     doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
   );
 
@@ -275,7 +270,7 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
   );
 }
 
-function GameEngineInner({ level, progress, teamId, username }: GameEngineProps) {
+function GameEngineInner({ level, progress, teamId, username, memberNames, absentMembers }: GameEngineProps) {
   const [state, formAction, isPendingForm] = useActionState<SubmitState, FormData>(submitAnswer, { success: false });
   const formRef = useRef<HTMLFormElement>(null);
   const { connectedMembers, readyMembers, markReady } = useTeamSync();
@@ -451,10 +446,117 @@ function GameEngineInner({ level, progress, teamId, username }: GameEngineProps)
   );
 }
 
-export function GameEngine({ level, progress, teamId, username, memberNames }: GameEngineProps) {
+function AbsentMemberGate({ memberNames, username, onConfirm }: { memberNames: string[], username: string, onConfirm: (absent: string[]) => void }) {
+  const [absent, setAbsent] = useState<string[]>([]);
+
+  const toggle = (name: string) => {
+    // Cannot mark yourself absent
+    if (name.toLowerCase() === username.toLowerCase()) return;
+    setAbsent(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
+  };
+
+  const activeCount = memberNames.length - absent.length;
+
   return (
-    <TeamSyncProvider key={`sync_lvl_${level.level_number}`} teamId={teamId} username={username} memberNames={memberNames} levelNumber={level.level_number}>
-      <GameEngineInner key={`engine_lvl_${level.level_number}`} level={level} progress={progress} teamId={teamId} username={username} memberNames={memberNames} />
+    <div className="w-full max-w-lg mx-auto space-y-6 animate-in fade-in duration-500 relative z-10 text-center">
+      <UserX className="w-16 h-16 text-gold mx-auto opacity-80" />
+      <div>
+        <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">Crew Muster</h2>
+        <p className="text-parchment/70 font-serif text-lg italic">Who sails with you today?</p>
+      </div>
+
+      <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md text-left space-y-2">
+        <p className="text-parchment/60 font-serif text-sm italic border-b border-gold/10 pb-3 mb-4">
+          All registered crew must be listed here. If a sailor cannot join today, mark them absent — the trials will wait only for those present.
+        </p>
+        <ul className="space-y-3">
+          {memberNames.map(name => {
+            const isYou = name.toLowerCase() === username.toLowerCase();
+            const isAbsent = absent.includes(name);
+            return (
+              <li key={name} className="flex justify-between items-center p-3 border-b border-gold/10 last:border-0">
+                <span className={`font-serif uppercase tracking-widest text-sm ${
+                  isAbsent ? 'text-parchment/30 line-through' : 'text-parchment'
+                }`}>
+                  {name} {isYou && <span className="text-gold not-italic normal-case">(You)</span>}
+                </span>
+                {isYou ? (
+                  <span className="text-gold text-xs font-serif uppercase tracking-widest">Present</span>
+                ) : (
+                  <button
+                    onClick={() => toggle(name)}
+                    className={`px-3 py-1 rounded border text-xs font-serif uppercase tracking-widest transition-colors ${
+                      isAbsent
+                        ? 'border-gold/50 text-gold bg-gold/10 hover:bg-gold/20'
+                        : 'border-danger/40 text-danger/80 bg-danger/5 hover:bg-danger/15'
+                    }`}
+                  >
+                    {isAbsent ? 'Mark Present' : 'Mark Absent'}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+
+      {activeCount < 2 && (
+        <p className="text-danger font-serif italic text-sm">At least 2 sailors must be present to set sail.</p>
+      )}
+
+      <Button
+        onClick={() => onConfirm(absent)}
+        disabled={activeCount < 2}
+        className="w-full py-4 text-xl"
+      >
+        Set Sail with {activeCount} Sailor{activeCount !== 1 ? 's' : ''}
+      </Button>
+    </div>
+  );
+}
+
+export function GameEngine({ level, progress, teamId, username, memberNames }: GameEngineProps) {
+  const [absentMembers, setAbsentMembers] = useState<string[]>([]);
+  const [crewConfirmed, setCrewConfirmed] = useState(false);
+
+  // Only show the absent-member gate if there are more than 2 registered members
+  // and this is the first level (or crew hasn't been confirmed yet this session)
+  const registeredCount = memberNames?.length ?? 0;
+  const storageKey = `nostos_crew_confirmed_${teamId}`;
+
+  // Restore crew confirmation from sessionStorage
+  React.useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setAbsentMembers(parsed.absentMembers || []);
+        setCrewConfirmed(true);
+      }
+    } catch { /* ignore */ }
+  }, [storageKey]);
+
+  const handleCrewConfirm = (absent: string[]) => {
+    setAbsentMembers(absent);
+    setCrewConfirmed(true);
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify({ absentMembers: absent }));
+    } catch { /* ignore */ }
+  };
+
+  if (!crewConfirmed && registeredCount > 2) {
+    return (
+      <AbsentMemberGate
+        memberNames={memberNames || []}
+        username={username}
+        onConfirm={handleCrewConfirm}
+      />
+    );
+  }
+
+  return (
+    <TeamSyncProvider key={`sync_lvl_${level.level_number}`} teamId={teamId} username={username} memberNames={memberNames} levelNumber={level.level_number} absentMembers={absentMembers}>
+      <GameEngineInner key={`engine_lvl_${level.level_number}`} level={level} progress={progress} teamId={teamId} username={username} memberNames={memberNames} absentMembers={absentMembers} />
       <CrewChat levelId={level.id} levelNumber={level.level_number} />
     </TeamSyncProvider>
   );

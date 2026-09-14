@@ -26,6 +26,7 @@ interface TeamSyncContextType {
   readyMembers: SyncMember[];
   doneMembers: SyncMember[];
   memberNames: string[];
+  activeMemberNames: string[];
   deviceAlias: string;
   markReady: (ready: boolean) => void;
   markDone: (done: boolean) => void;
@@ -44,7 +45,7 @@ export const useTeamSync = () => {
   return ctx;
 };
 
-export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumber, children }: { teamId: string, username: string, memberNames?: string[], levelNumber?: number, children: React.ReactNode }) {
+export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumber, absentMembers = [], children }: { teamId: string, username: string, memberNames?: string[], levelNumber?: number, absentMembers?: string[], children: React.ReactNode }) {
   const [members, setMembers] = useState<SyncMember[]>([]);
   const [deviceToken, setDeviceToken] = useState<string>("");
   const [deviceAlias, setDeviceAlias] = useState<string>("");
@@ -280,6 +281,9 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
     }
   };
 
+  // Active members = registered crew minus those marked absent
+  const activeMemberNames = memberNames.filter(n => !absentMembers.includes(n));
+
   const readyMembers = members.filter(m => m.isReady);
   const doneMembers = members.filter(m => m.isDone);
 
@@ -289,6 +293,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       readyMembers,
       doneMembers,
       memberNames,
+      activeMemberNames,
       deviceAlias,
       markReady,
       markDone,
