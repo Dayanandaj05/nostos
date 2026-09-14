@@ -14,7 +14,7 @@ export default async function VolunteerPage() {
   // Fetch teams progress
   const { data: teams } = await supabase
     .from("progress")
-    .select("*, teams(ship_name)")
+    .select("*, teams(ship_name, captain_name, captain_phone)")
     .order("current_level", { ascending: false });
 
   return (

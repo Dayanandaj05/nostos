@@ -114,7 +114,14 @@ export function AdminClient({ teams, levels, logs, currentUsername }: any) {
                 <tbody className="divide-y divide-zinc-800/50">
                   {teams.map((t: any) => (
                     <tr key={t.team_id} className="hover:bg-zinc-800/20">
-                      <td className="py-3 font-serif text-gold">{t.teams.ship_name}</td>
+                      <td className="py-3 font-serif text-gold">
+                        <div>{t.teams?.ship_name}</div>
+                        {(t.teams?.captain_name || t.teams?.captain_phone) && (
+                          <div className="text-xs text-parchment/60 font-sans mt-0.5 font-normal">
+                            Capt: {t.teams.captain_name || 'N/A'} {t.teams.captain_phone ? `• ${t.teams.captain_phone}` : ''}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3">{t.current_level > 10 ? 'DONE' : t.current_level}</td>
                       <td className="py-3 text-danger">{t.incorrect_count || 0}</td>
                       <td className="py-3">

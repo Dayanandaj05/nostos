@@ -64,7 +64,12 @@ export function VolunteerClient({ teams, currentUsername }: any) {
                 return (
                   <tr key={t.team_id} className="hover:bg-zinc-800/20">
                     <td className={`py-4 font-serif text-lg ${isFinished ? 'text-gold' : 'text-parchment'}`}>
-                      {t.teams.ship_name}
+                      <div>{t.teams?.ship_name}</div>
+                      {(t.teams?.captain_name || t.teams?.captain_phone) && (
+                        <div className="text-xs text-parchment/60 font-sans mt-0.5 font-normal">
+                          Capt: {t.teams.captain_name || 'N/A'} {t.teams.captain_phone ? `• ${t.teams.captain_phone}` : ''}
+                        </div>
+                      )}
                     </td>
                     <td className="py-4">
                       {isFinished ? (

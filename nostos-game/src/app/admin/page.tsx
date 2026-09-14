@@ -14,7 +14,7 @@ export default async function AdminPage() {
   // Fetch all necessary data
   const { data: teams } = await supabase
     .from("progress")
-    .select("*, teams(ship_name)")
+    .select("*, teams(ship_name, captain_name, captain_phone)")
     .order("current_level", { ascending: false });
 
   const { data: levels } = await supabase
@@ -24,7 +24,7 @@ export default async function AdminPage() {
 
   const { data: logs } = await supabase
     .from("incident_logs")
-    .select("*, teams(ship_name)")
+    .select("*, teams(ship_name, captain_name, captain_phone)")
     .order("created_at", { ascending: false })
     .limit(50);
 

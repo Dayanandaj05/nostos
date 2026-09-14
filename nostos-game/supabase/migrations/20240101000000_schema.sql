@@ -4,6 +4,8 @@ CREATE TABLE teams (
     ship_name TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     member_names TEXT[] NOT NULL,
+    captain_name TEXT,
+    captain_phone TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 

@@ -162,16 +162,37 @@ export default function RegisterPage() {
               
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">First Sailor (Captain)</label>
-                  <Input name="member_1" placeholder="Name" />
+                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Captain's Full Name</label>
+                  <Input 
+                    name="captain_name" 
+                    isError={!!state.errors?.captain_name}
+                    placeholder="Full Name (e.g. Odysseus)" 
+                  />
+                  {state.errors?.captain_name && (
+                    <p className="text-danger italic text-sm mt-1">{state.errors.captain_name}</p>
+                  )}
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Captain's Phone Number</label>
+                  <Input 
+                    name="captain_phone" 
+                    type="tel"
+                    isError={!!state.errors?.captain_phone}
+                    placeholder="Phone Number (e.g. +1 555-0199)" 
+                  />
+                  {state.errors?.captain_phone && (
+                    <p className="text-danger italic text-sm mt-1">{state.errors.captain_phone}</p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-parchment/60 uppercase tracking-widest text-sm block">Second Sailor</label>
                   <Input name="member_2" placeholder="Name" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Third Sailor</label>
-                  <Input name="member_3" placeholder="Name" />
+                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Third Sailor (Optional)</label>
+                  <Input name="member_3" placeholder="Name (Optional)" />
                 </div>
                 
                 {showFourthMember ? (

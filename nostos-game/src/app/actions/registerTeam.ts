@@ -8,6 +8,8 @@ export type RegisterState = {
   errors?: {
     ship_name?: string;
     password?: string;
+    captain_name?: string;
+    captain_phone?: string;
     member_names?: string;
     general?: string;
   };
@@ -16,10 +18,19 @@ export type RegisterState = {
 export async function registerTeam(prevState: RegisterState, formData: FormData): Promise<RegisterState> {
   const ship_name = formData.get("ship_name")?.toString().trim();
   const password = formData.get("password")?.toString();
+  const captain_name = formData.get("captain_name")?.toString().trim();
+  const captain_phone = formData.get("captain_phone")?.toString().trim();
   
-  // Extract members
+  // Extract members starting with the Captain
   const member_names: string[] = [];
-  for (let i = 1; i <= 4; i++) {
+  if (captain_name) {
+    member_names.push(captain_name);
+  } else {
+    const member_1 = formData.get("member_1")?.toString().trim();
+    if (member_1) member_names.push(member_1);
+  }
+
+  for (let i = 2; i <= 4; i++) {
     const member = formData.get(`member_${i}`)?.toString().trim();
     if (member) member_names.push(member);
   }
@@ -28,7 +39,9 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
 
   if (!ship_name) errors.ship_name = "A ship must have a name.";
   if (!password || password.trim().length < 1) errors.password = "The password must be at least 1 character.";
-  if (member_names.length < 3) errors.member_names = "A crew requires at least 3 members.";
+  if (!captain_name) errors.captain_name = "The Captain must declare their full name.";
+  if (!captain_phone) errors.captain_phone = "The Captain must provide a phone number.";
+  if (member_names.length < 2) errors.member_names = "A crew requires at least 2 members.";
 
   if (Object.keys(errors).length > 0) {
     return { success: false, errors };
@@ -55,7 +68,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
     // Insert team
     const { error: insertError } = await supabase
       .from("teams")
-      .insert([{ ship_name, password_hash, member_names }]);
+      .insert([{ ship_name, password_hash, member_names, captain_name, captain_phone }]);
 
     if (insertError) throw insertError;
   } catch (e) {
@@ -75,7 +88,9 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
       id: crypto.randomUUID(),
       ship_name,
       password_hash,
-      member_names
+      member_names,
+      captain_name,
+      captain_phone
     });
   }
 
