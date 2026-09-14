@@ -195,8 +195,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
             <div className="space-y-6 flex flex-col items-center">
               <h4 className="text-gold font-serif text-xl tracking-widest uppercase text-center border-b border-gold/20 pb-2 w-full">Shade of the Key</h4>
               <p className="text-parchment/80 font-serif text-center italic text-base">
-                "Decode the Underworld cipher: <span className="text-gold font-mono font-bold tracking-widest">I - P - N - F</span> <br />
-                <span className="text-xs text-gold/70 font-sans font-normal">(Shift each letter back by 1 position in the alphabet)</span>"
+                "Decode the Underworld cipher: <span className="text-gold font-mono font-bold tracking-widest">I - P - N - F</span>"
               </p>
               <form onSubmit={handleRiddleSubmit} className="w-full flex space-x-2">
                 <input 
