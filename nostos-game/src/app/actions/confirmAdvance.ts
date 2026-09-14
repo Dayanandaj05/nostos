@@ -20,27 +20,34 @@ export async function confirmAdvance(fromLevelNumber?: number) {
   }
 
   // Guard against race conditions & double calls:
-  // Only advance if pending_advance is true AND current_level matches fromLevelNumber (if specified)
-  if (currentProgress.pending_advance) {
-    if (fromLevelNumber !== undefined && currentProgress.current_level !== fromLevelNumber) {
-      console.log(`[confirmAdvance] Team ${teamId} already advanced past level ${fromLevelNumber} (current: ${currentProgress.current_level}). Skipping.`);
-      revalidatePath("/play");
-      return { success: true };
-    }
+  // Only advance if current_level matches fromLevelNumber (if specified)
+  if (fromLevelNumber !== undefined && currentProgress.current_level !== fromLevelNumber) {
+    console.log(`[confirmAdvance] Team ${teamId} already advanced past level ${fromLevelNumber} (current: ${currentProgress.current_level}). Skipping.`);
+    revalidatePath("/play");
+    return { success: true };
+  }
 
-    const { error } = await supabase
-      .from("progress")
-      .update({ 
-        current_level: currentProgress.current_level + 1,
-        pending_advance: false,
-        last_updated_at: new Date().toISOString()
-      })
-      .eq("team_id", teamId);
+  const nextLevel = currentProgress.current_level + 1;
+  const isFinished = nextLevel > 10;
+  
+  const updateData: any = { 
+    current_level: nextLevel,
+    pending_advance: false,
+    last_updated_at: new Date().toISOString()
+  };
+  
+  if (isFinished) {
+    updateData.completed_at = new Date().toISOString();
+  }
 
-    if (error) {
-      console.error(`[confirmAdvance] Error advancing team ${teamId}:`, error);
-      return { success: false, error: "Failed to advance level." };
-    }
+  const { error } = await supabase
+    .from("progress")
+    .update(updateData)
+    .eq("team_id", teamId);
+
+  if (error) {
+    console.error(`[confirmAdvance] Error advancing team ${teamId}:`, error);
+    return { success: false, error: "Failed to advance level." };
   }
 
   revalidatePath("/play");
