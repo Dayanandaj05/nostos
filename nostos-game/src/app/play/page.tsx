@@ -72,7 +72,16 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     console.warn("Supabase connection unavailable, using local dev progress fallback:", err);
   }
 
-  // Fallback for mockDevTeams if offline
+  // Fallback for mockDevTeams or offline progress
+  if (!progress) {
+    const globalForDev = globalThis as unknown as { mockDevProgress?: Record<string, any> };
+    globalForDev.mockDevProgress = globalForDev.mockDevProgress || {};
+    if (!globalForDev.mockDevProgress[teamId]) {
+      globalForDev.mockDevProgress[teamId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3 };
+    }
+    progress = globalForDev.mockDevProgress[teamId];
+  }
+
   if (memberNames.length === 0) {
     const globalForDev = globalThis as unknown as { mockDevTeams?: any[] };
     if (globalForDev.mockDevTeams) {
@@ -87,16 +96,10 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     memberNames = [session.username || "Sailor"];
   }
 
-  if (!progress) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ink text-parchment">
-        <p>Could not retrieve your progress. <Link href="/login" className="text-gold underline">Try again.</Link></p>
-      </div>
-    );
-  }
+  const activeProgress = progress || { current_level: 1, incorrect_count: 0, aid_tokens: 3 };
 
   // Strict sequential trial level
-  const currentLevelNumber = progress.current_level;
+  const currentLevelNumber = activeProgress.current_level;
 
   // 2. Check for game completion
   if (currentLevelNumber > 10) {
@@ -156,7 +159,7 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
 
                <div className="flex flex-col items-center space-y-2 border-y md:border-y-0 md:border-x border-gold/20 py-4 md:py-0">
                  <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">The Gods Laughed</span>
-                 <span className="text-3xl font-mono text-danger">{progress.incorrect_count} <span className="text-sm">times</span></span>
+                 <span className="text-3xl font-mono text-danger">{activeProgress.incorrect_count} <span className="text-sm">times</span></span>
                </div>
 
                <div className="flex flex-col items-center space-y-2">

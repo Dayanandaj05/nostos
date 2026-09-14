@@ -40,7 +40,16 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
   if (!ship_name) errors.ship_name = "A ship must have a name.";
   if (!password || password.trim().length < 1) errors.password = "The password must be at least 1 character.";
   if (!captain_name) errors.captain_name = "The Captain must declare their full name.";
-  if (!captain_phone) errors.captain_phone = "The Captain must provide a phone number.";
+  
+  if (!captain_phone) {
+    errors.captain_phone = "The Captain must provide a phone number.";
+  } else {
+    const cleanPhone = captain_phone.replace(/[\s\-\(\)\+]/g, "");
+    if (cleanPhone.length < 7 || cleanPhone.length > 15 || !/^\d+$/.test(cleanPhone)) {
+      errors.captain_phone = "Please enter a valid phone number (7-15 digits).";
+    }
+  }
+
   if (member_names.length < 2) errors.member_names = "A crew requires at least 2 members.";
 
   if (Object.keys(errors).length > 0) {
@@ -66,16 +75,30 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
     const password_hash = await bcrypt.hash(password!, salt);
 
     // Insert team
-    const { error: insertError } = await supabase
+    const { data: newTeam, error: insertError } = await supabase
       .from("teams")
-      .insert([{ ship_name, password_hash, member_names, captain_name, captain_phone }]);
+      .insert([{ ship_name, password_hash, member_names, captain_name, captain_phone }])
+      .select("id")
+      .single();
 
     if (insertError) throw insertError;
+
+    if (newTeam?.id) {
+      // Auto-initialize progress record for the newly registered team
+      await supabase
+        .from("progress")
+        .insert([{ 
+          team_id: newTeam.id, 
+          current_level: 1, 
+          first_login_at: new Date().toISOString() 
+        }]);
+    }
   } catch (e) {
     console.warn("Supabase unavailable, using offline fallback for registration.");
     
-    const globalForDev = globalThis as unknown as { mockDevTeams?: any[] };
+    const globalForDev = globalThis as unknown as { mockDevTeams?: any[]; mockDevProgress?: Record<string, any> };
     globalForDev.mockDevTeams = globalForDev.mockDevTeams || [];
+    globalForDev.mockDevProgress = globalForDev.mockDevProgress || {};
     
     if (globalForDev.mockDevTeams.find((t: any) => t.ship_name.toLowerCase() === ship_name!.toLowerCase())) {
       return { success: false, errors: { ship_name: "That ship is already sailing these waters." } };
@@ -84,14 +107,21 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password!, salt);
     
+    const mockId = crypto.randomUUID();
     globalForDev.mockDevTeams.push({
-      id: crypto.randomUUID(),
+      id: mockId,
       ship_name,
       password_hash,
       member_names,
       captain_name,
       captain_phone
     });
+
+    globalForDev.mockDevProgress[mockId] = {
+      current_level: 1,
+      incorrect_count: 0,
+      aid_tokens: 3
+    };
   }
 
   return { success: true };
