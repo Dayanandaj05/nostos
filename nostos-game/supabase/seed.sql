@@ -10,7 +10,7 @@ INSERT INTO levels (level_number, title, story_text, puzzle_type, puzzle_data, c
 
 (5, 'Circe''s Island', 'The sorceress Circe has turned half your crew into swine! Search her opulent hall for the hidden ingredients to counter her spell.', 'hidden_object', '{"hotspots": [{"id": 1, "letter": "P"}, {"id": 2, "letter": "I"}, {"id": 3, "letter": "G"}]}', 'PIG'),
 
-(6, 'The Land of the Dead', 'You have descended into the Underworld. The spirits whisper fragmented truths. You must each listen to a different shade and combine their knowledge to find the way back to the living.', 'asymmetric_split', '{"variants": ["THE", "ROAD", "HOME"]}', 'THE ROAD HOME'),
+(6, 'The Land of the Dead', 'You have descended into the Underworld. The spirits whisper fragmented truths. You must each listen to a different shade and combine their knowledge to find the way back to the living.', 'asymmetric_split', '{"variants": ["FIND", "THE", "ROAD", "HOME"]}', 'FIND THE ROAD HOME'),
 
 (7, 'The Sirens'' Song', 'Approaching the island of the Sirens, some of your crew have stopped their ears with wax, seeing only blurred shapes. Others must listen to the song and pluck the golden words from the deceptive lyrics.', 'split_blurred', '{"clear_text": "TRUST NO SONG", "waves": 3}', 'TRUST NO SONG'),
 

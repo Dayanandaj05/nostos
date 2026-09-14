@@ -36,7 +36,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
         sessionStorage.setItem("nostos_device_token", token);
       }
 
-      const variantsList = data.variants && data.variants.length > 0 ? data.variants : ["THE", "ROAD", "HOME"];
+      const variantsList = data.variants && data.variants.length > 0 ? data.variants : ["FIND", "THE", "ROAD", "HOME"];
 
       // 2. Check cached variant in sessionStorage for instant 0ms load
       const cached = sessionStorage.getItem(`nostos_variant_${levelId}`);
@@ -115,11 +115,13 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
   const handleRiddleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const val = riddleInput.trim().toUpperCase();
-    if (variant === "THE" && (val === "NAME" || val === "MY NAME" || val === "A NAME")) {
+    if (variant === "FIND" && (val === "ECHO" || val === "AN ECHO" || val === "THE ECHO")) {
+      setSolved(true);
+    } else if (variant === "THE" && (val === "NAME" || val === "MY NAME" || val === "A NAME")) {
       setSolved(true);
     } else if (variant === "ROAD" && (val === "26" || val === "TWENTY SIX" || val === "TWENTYSIX")) {
       setSolved(true);
-    } else if (variant === "HOME" && (val === "HOME" || val === "THE ROAD HOME")) {
+    } else if (variant === "HOME" && (val === "HOME" || val === "THE ROAD HOME" || val === "FIND THE ROAD HOME")) {
       setSolved(true);
     } else {
       setRiddleInput("");
@@ -145,6 +147,28 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
       {!solved ? (
         <div className="w-full max-w-lg bg-ink/50 border border-gold/20 p-8 rounded-xl shadow-2xl backdrop-blur-sm animate-in fade-in zoom-in duration-500">
           
+          {/* VARIANT 0: FIND (Shade of the Compass Echo) */}
+          {variant === "FIND" && (
+            <div className="space-y-6 flex flex-col items-center">
+              <h4 className="text-gold font-serif text-xl tracking-widest uppercase text-center border-b border-gold/20 pb-2 w-full">Shade of the Echo</h4>
+              <p className="text-parchment/80 font-serif text-center italic text-base">
+                "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?"
+              </p>
+              <form onSubmit={handleRiddleSubmit} className="w-full flex space-x-2">
+                <input 
+                  type="text" 
+                  value={riddleInput}
+                  onChange={e => setRiddleInput(e.target.value)}
+                  placeholder="Your answer..."
+                  className="flex-1 bg-ink/80 border border-gold/30 focus:border-gold/80 px-4 py-2 rounded text-parchment outline-none font-serif uppercase tracking-widest"
+                />
+                <button type="submit" className="px-6 py-2 bg-gold/10 hover:bg-gold/20 border border-gold/50 rounded text-gold uppercase tracking-widest">
+                  Unlock Passage
+                </button>
+              </form>
+            </div>
+          )}
+
           {/* VARIANT 1: THE (Gate Latitude Riddle) */}
           {variant === "THE" && (
             <div className="space-y-6 flex flex-col items-center">

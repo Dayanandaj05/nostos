@@ -85,6 +85,8 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       if (["nobody", "nothing", "noone", "outis", "none"].includes(normSubmitted)) {
         isCorrect = true;
       }
+    } else if (currentLevel === 6 && (normSubmitted === "findtheroadhome" || normSubmitted === "theroadhome")) {
+      isCorrect = true;
     } else if (level.correct_answer === "6_CORRECT" && (normSubmitted === "6" || normSubmitted === "6correct" || normSubmitted === "six")) {
       isCorrect = true;
     } else if (level.correct_answer === "DEPENDS_ON_PATH" && (normSubmitted === "5" || normSubmitted === "15" || normSubmitted === "15" || normSubmitted === "dependsonpath" || normSubmitted === "scylla" || normSubmitted === "charybdis")) {

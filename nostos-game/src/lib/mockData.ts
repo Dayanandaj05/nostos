@@ -61,8 +61,8 @@ export const SEED_LEVELS = [
     title: "The Land of the Dead",
     story_text: "You have descended into the Underworld. The spirits whisper fragmented truths. You must each listen to a different shade and combine their knowledge to find the way back to the living.",
     puzzle_type: "asymmetric_split",
-    puzzle_data: { variants: ["THE", "ROAD", "HOME"] },
-    correct_answer: "THE ROAD HOME",
+    puzzle_data: { variants: ["FIND", "THE", "ROAD", "HOME"] },
+    correct_answer: "FIND THE ROAD HOME",
     is_locked: false
   },
   {
