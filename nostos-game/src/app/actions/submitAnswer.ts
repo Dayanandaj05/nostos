@@ -118,7 +118,6 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     let dbSuccess = false;
     try {
       const updateData: any = {
-        pending_advance: true,
         correct_count: (progress.correct_count || 0) + 1,
         last_updated_at: new Date().toISOString(),
       };

@@ -150,9 +150,26 @@ function GameEngineInner({ level, progress }: GameEngineProps) {
 
   const currentIncorrectCount = state.incorrect_count ?? progress.incorrect_count;
   
-  // A puzzle is successfully solved if either the global progress says so (from a teammate solving it)
-  // or our local state for THIS specific level says so (we solved it).
-  const isSolved = progress.pending_advance || (state.success && state.completed_level === level.level_number);
+  const [localSolved, setLocalSolved] = useState(false);
+
+  React.useEffect(() => {
+    if (state.success) {
+      try { localStorage.setItem(`nostos_solved_${level.id}`, 'true'); } catch (e) {}
+      setLocalSolved(true);
+    } else {
+      try {
+        if (localStorage.getItem(`nostos_solved_${level.id}`) === 'true') {
+          setLocalSolved(true);
+        } else {
+          setLocalSolved(false);
+        }
+      } catch (e) {}
+    }
+  }, [state.success, level.id]);
+
+  // A puzzle is successfully solved if either the global progress says so (from the team advancing)
+  // or our local state says so (we personally solved it).
+  const isSolved = progress.pending_advance || localSolved || (state.success && state.completed_level === level.level_number);
 
   // The readiness gate is passed if everyone connected has marked ready, or during initial connection load.
   const isAllReady = connectedMembers.length === 0 || readyMembers.length === connectedMembers.length;
