@@ -5,9 +5,10 @@ import { GameEngine } from "@/components/game/GameEngine";
 import { TeamSyncProvider } from "@/components/game/TeamSyncProvider";
 import { CrewChat } from "@/components/game/CrewChat";
 import Link from "next/link";
-import { Anchor } from "lucide-react";
+import { Anchor, LogOut } from "lucide-react";
 import { SEED_LEVELS } from "@/lib/mockData";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
+import { logoutTeam } from "@/app/actions/auth";
 
 export default async function PlayPage({ searchParams }: { searchParams?: Promise<{ level?: string }> }) {
   const session = await getSession();
@@ -225,8 +226,20 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
             </span>
           </div>
         </div>
-        <div className="text-parchment/60 font-serif italic text-sm">
-          Navigating Trial {currentLevelNumber} of 10
+        <div className="flex items-center gap-6">
+          <div className="text-parchment/60 font-serif italic text-sm hidden sm:block">
+            Navigating Trial {currentLevelNumber} of 10
+          </div>
+          <form action={logoutTeam}>
+            <button 
+              type="submit" 
+              title="Log out" 
+              className="flex items-center gap-2 px-3 py-1.5 rounded border border-gold/30 bg-[#0B121E]/80 hover:border-gold hover:text-gold text-parchment/80 text-xs font-serif transition-colors"
+            >
+              <LogOut className="w-4 h-4 text-gold" />
+              <span>Leave Ship</span>
+            </button>
+          </form>
         </div>
       </header>
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { supabase } from "@/lib/supabase";
-import { getSession } from "@/lib/session";
+import { getSession, isSessionActive } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { SEED_LEVELS } from "@/lib/mockData";
 
@@ -16,6 +16,10 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
   const session = await getSession();
   if (!session || session.role !== "team") {
     return { success: false, error: "Authentication lost. Please log in again." };
+  }
+
+  if (session.id && session.username && session.sessionId && !isSessionActive(session.id, session.username, session.sessionId)) {
+    return { success: false, error: "Your session has been logged in on another device or has expired." };
   }
 
   const teamId = session.id;

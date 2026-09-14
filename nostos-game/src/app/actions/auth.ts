@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { createSession, setActiveSession, isUserCurrentlyLoggedIn } from "@/lib/session";
+import { createSession, setActiveSession, isUserCurrentlyLoggedIn, updateSessionHeartbeat, clearActiveSession, clearSession, getSession, isSessionActive } from "@/lib/session";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -103,6 +103,25 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   redirect("/play");
 }
 
+export async function sessionHeartbeat() {
+  const session = await getSession();
+  if (!session || !session.id || !session.username || !session.sessionId) {
+    return { active: false };
+  }
+
+  const active = updateSessionHeartbeat(session.id, session.username, session.sessionId);
+  return { active };
+}
+
+export async function logoutTeam() {
+  const session = await getSession();
+  if (session && session.id && session.username) {
+    clearActiveSession(session.id, session.username);
+  }
+  await clearSession();
+  redirect("/login");
+}
+
 export async function loginAdmin(prevState: LoginState, formData: FormData): Promise<LoginState> {
   const username = formData.get("username")?.toString().trim();
   const password = formData.get("password")?.toString();
@@ -129,9 +148,6 @@ export async function loginAdmin(prevState: LoginState, formData: FormData): Pro
     return { success: false, error: "The Oracle is offline. Please try again later." };
   }
 
-  // Assuming admins are seeded, you would bcrypt.compare here. 
-  // For safety in this environment without a seeded admin password, 
-  // we still attempt a bcrypt compare.
   const isMatch = await bcrypt.compare(password, admin.password_hash);
   if (!isMatch) {
     return { success: false, error: "Invalid credentials." };
@@ -174,8 +190,13 @@ export async function quickLoginTestTeam() {
     console.warn("Supabase local/remote connection unavailable, using fallback dev session for Test Argo:", err);
   }
 
-  await createSession({ role: "team", id: teamId, ship_name: "Test Argo", username: "Dev Tester" });
+  const sessionId = crypto.randomUUID();
   await ensureDeviceToken();
+  const cookieStore = await cookies();
+  const deviceToken = cookieStore.get("device_token")?.value;
+  setActiveSession(teamId, "Dev Tester", sessionId, deviceToken);
+
+  await createSession({ role: "team", id: teamId, ship_name: "Test Argo", username: "Dev Tester", sessionId });
   redirect("/play");
 }
 

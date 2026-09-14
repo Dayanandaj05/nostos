@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { sessionHeartbeat } from "@/app/actions/auth";
 
 export interface SyncMember {
   device_token: string;
@@ -49,6 +50,27 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
   const [myState, setMyState] = useState({ isReady: true, isDone: false });
   const channelRef = useRef<any>(null);
   const router = useRouter();
+
+  // Periodic heartbeat to keep session active and detect single-device displacement
+  useEffect(() => {
+    const runHeartbeat = async () => {
+      try {
+        const res = await sessionHeartbeat();
+        if (res && res.active === false) {
+          router.push("/login?error=session_displaced");
+        }
+      } catch (err) {
+        // Ignore network errors in heartbeat
+      }
+    };
+
+    // Run initial heartbeat
+    runHeartbeat();
+
+    // Repeat every 15 seconds
+    const interval = setInterval(runHeartbeat, 15000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   useEffect(() => {
     let token = localStorage.getItem("nostos_device_token");

@@ -41,11 +41,11 @@ export function isUserCurrentlyLoggedIn(teamId: string, username: string, curren
   const existing = getActiveSessionsMap().get(key);
   if (!existing) return false;
 
-  // Active session expires after 5 minutes of total inactivity
-  const isRecent = Date.now() - existing.lastActiveAt < 5 * 60 * 1000;
+  // Active session expires after 2 minutes of total inactivity (no heartbeats)
+  const isRecent = Date.now() - existing.lastActiveAt < 2 * 60 * 1000;
   if (!isRecent) return false;
 
-  // If it's the exact same device token, allow re-login/refresh
+  // If it's the exact same device token, allow re-login/refresh on same device
   if (currentDeviceToken && existing.deviceToken === currentDeviceToken) {
     return false;
   }
@@ -53,12 +53,17 @@ export function isUserCurrentlyLoggedIn(teamId: string, username: string, curren
   return true;
 }
 
-export function updateSessionHeartbeat(teamId: string, username: string) {
+export function updateSessionHeartbeat(teamId: string, username: string, sessionId?: string): boolean {
   const key = `${teamId}:${username.trim().toLowerCase()}`;
   const existing = getActiveSessionsMap().get(key);
   if (existing) {
+    if (sessionId && existing.sessionId !== sessionId) {
+      return false;
+    }
     existing.lastActiveAt = Date.now();
+    return true;
   }
+  return false;
 }
 
 export function clearActiveSession(teamId: string, username: string) {
@@ -67,11 +72,14 @@ export function clearActiveSession(teamId: string, username: string) {
 }
 
 export function isSessionActive(teamId: string, username: string, sessionId?: string): boolean {
-  if (!sessionId) return true;
+  if (!sessionId) return false;
   const key = `${teamId}:${username.trim().toLowerCase()}`;
   const existing = getActiveSessionsMap().get(key);
-  if (!existing) return true;
-  return existing.sessionId === sessionId;
+  if (!existing) return false;
+  
+  // Must match session ID and be within inactivity threshold (2 mins)
+  const isRecent = Date.now() - existing.lastActiveAt < 2 * 60 * 1000;
+  return existing.sessionId === sessionId && isRecent;
 }
 
 export async function encrypt(payload: SessionPayload) {
