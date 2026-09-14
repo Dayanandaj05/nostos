@@ -29,14 +29,6 @@ export async function proxy(request: NextRequest) {
     if (!session || session.role !== "team") {
       return NextResponse.redirect(new URL("/login", request.url));
     }
-
-    if (session.id && session.username && session.sessionId) {
-      if (!isSessionActive(session.id, session.username, session.sessionId)) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("error", "session_displaced");
-        return NextResponse.redirect(loginUrl);
-      }
-    }
   }
 
   // Protect /admin (Admins only)

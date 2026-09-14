@@ -58,8 +58,13 @@ export function updateSessionHeartbeat(teamId: string, username: string, session
   const existing = getActiveSessionsMap().get(key);
   
   if (existing) {
+    // If heartbeat comes from the same device (or no device token recorded), allow session sync
     if (sessionId && existing.sessionId !== sessionId) {
-      return false; // Actually a different session trying to heartbeat
+      if (!existing.deviceToken || (deviceToken && existing.deviceToken === deviceToken)) {
+        existing.sessionId = sessionId;
+      } else {
+        return false; // Actually a different device trying to heartbeat
+      }
     }
     existing.lastActiveAt = Date.now();
     if (deviceToken) existing.deviceToken = deviceToken;
