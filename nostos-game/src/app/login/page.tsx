@@ -30,6 +30,8 @@ function LoginContent() {
   const [teamState, teamFormAction, isTeamPending] = useActionState(loginTeam, { success: false });
   const [adminState, adminFormAction, isAdminPending] = useActionState(loginAdmin, { success: false });
 
+  const activeError = teamState.error || displacedError;
+
   return (
     <div className="relative z-10 w-full max-w-lg">
       
@@ -80,17 +82,18 @@ function LoginContent() {
         <div className="absolute -bottom-3 -left-3 w-5 h-5 border-b-2 border-l-2 border-gold/70" />
         <div className="absolute -bottom-3 -right-3 w-5 h-5 border-b-2 border-r-2 border-gold/70" />
 
-        {displacedError && (
+        {activeError && (
           <div className="mb-6">
-            <ErrorBanner message={displacedError} />
+            <ErrorBanner 
+              variant="destructive" 
+              title={teamState.error ? "Login Blocked" : "Session Displaced"} 
+              message={activeError} 
+            />
           </div>
         )}
 
         {activeTab === "crew" ? (
           <form action={teamFormAction} className="space-y-8">
-            {teamState.error && (
-              <ErrorBanner variant="destructive" title="Login Blocked" message={teamState.error} />
-            )}
             
             <div className="space-y-2">
               <label className="text-parchment/70 uppercase tracking-widest text-xs font-bold block flex justify-between">

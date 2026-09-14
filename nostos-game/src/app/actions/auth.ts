@@ -38,27 +38,24 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   let team: any = null;
   
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("teams")
       .select("id, password_hash, member_names")
       .ilike("ship_name", ship_name)
-      .maybeSingle();
+      .limit(1);
 
-    if (error) {
-      console.error(error);
-      return { success: false, error: "The Oracle is silent. Try again." };
+    if (data && data.length > 0) {
+      team = data[0];
     }
-    team = data;
   } catch (err) {
-    console.warn("Supabase connection failed, checking offline mock teams:", err);
-    
+    console.warn("Supabase query error:", err);
+  }
+
+  // Fallback for dev mock teams if offline or not found in DB
+  if (!team) {
     const globalForDev = globalThis as unknown as { mockDevTeams?: any[] };
     if (globalForDev.mockDevTeams) {
       team = globalForDev.mockDevTeams.find((t: any) => t.ship_name.toLowerCase() === ship_name.toLowerCase());
-    }
-
-    if (!team) {
-      return { success: false, error: "The Oracle is offline and this vessel is not in local memory." };
     }
   }
 
