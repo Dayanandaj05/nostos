@@ -60,13 +60,16 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     console.warn("Supabase unavailable for answer submission, using dev fallback state:", err);
   }
 
-  // Fallbacks if Supabase is offline
+  // Fallback if Supabase is offline (dev only)
   if (!progress) {
-    const { mockDevProgressState } = require("@/lib/mockData");
-    if (!mockDevProgressState[teamId]) {
-      mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, correct_count: 0 };
+    if (process.env.NODE_ENV !== 'production') {
+      const g = globalThis as any;
+      g.mockDevProgressState = g.mockDevProgressState || {};
+      if (!g.mockDevProgressState[teamId]) {
+        g.mockDevProgressState[teamId] = { current_level: 1, incorrect_count: 0, correct_count: 0 };
+      }
+      progress = g.mockDevProgressState[teamId];
     }
-    progress = mockDevProgressState[teamId];
   }
 
   if (!progress) {
@@ -155,9 +158,10 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       dbSuccess = false;
     }
 
-    if (!dbSuccess) {
-      const { mockDevProgressState } = require("@/lib/mockData");
-      mockDevProgressState[teamId] = {
+    if (!dbSuccess && process.env.NODE_ENV !== 'production') {
+      const g = globalThis as any;
+      g.mockDevProgressState = g.mockDevProgressState || {};
+      g.mockDevProgressState[teamId] = {
         current_level: currentLevel,
         correct_count: (progress.correct_count || 0) + 1,
         incorrect_count: progress.incorrect_count || 0
