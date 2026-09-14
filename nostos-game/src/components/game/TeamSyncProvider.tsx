@@ -101,13 +101,16 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         broadcast: { self: true }
       }
     });
+    
+    channelRef.current = channel;
+
+    const myStateRef = { isReady: false, isDone: false };
 
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const connected: SyncMember[] = [];
         for (const key in state) {
-          // Take the most recent presence state for each device
           const presence = state[key][0] as any;
           if (presence) {
             connected.push({
@@ -128,13 +131,20 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
+          // Track whatever the LATEST state is at the moment of subscription!
           await channel.track({
             alias,
-            isReady: false,
-            isDone: false
+            isReady: myStateRef.isReady,
+            isDone: myStateRef.isDone
           });
         }
       });
+
+    // Provide a way for markReady/markDone to update the ref before subscription
+    channelRef.current = {
+      channel,
+      myStateRef
+    };
 
     // Listen to database changes for progress sync
     const progressChannel = supabase.channel(`progress_sync_${teamId}`)
@@ -182,12 +192,21 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
 
   // Sync my state to presence when it changes
   useEffect(() => {
-    if (channelRef.current && deviceToken && deviceAlias) {
-      channelRef.current.track({
-        alias: deviceAlias,
-        isReady: myState.isReady,
-        isDone: myState.isDone
-      });
+    if (channelRef.current && channelRef.current.channel && deviceToken && deviceAlias) {
+      // Update the ref so if it subscribes later, it uses this state
+      channelRef.current.myStateRef.isReady = myState.isReady;
+      channelRef.current.myStateRef.isDone = myState.isDone;
+
+      // Try to track immediately if already subscribed
+      try {
+        channelRef.current.channel.track({
+          alias: deviceAlias,
+          isReady: myState.isReady,
+          isDone: myState.isDone
+        });
+      } catch (e) {
+        // Ignored if not subscribed yet, the subscribe callback will handle it using myStateRef
+      }
     }
   }, [myState, deviceAlias, deviceToken]);
 
@@ -195,14 +214,15 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
     setMyState(prev => ({ ...prev, isReady: ready }));
     setMembers(prev => prev.map(m => m.device_token === deviceToken ? { ...m, isReady: ready } : m));
   };
+
   const markDone = (done: boolean) => {
     setMyState(prev => ({ ...prev, isDone: done }));
     setMembers(prev => prev.map(m => m.device_token === deviceToken ? { ...m, isDone: done } : m));
   };
 
   const broadcastLevelAdvance = (targetLevel?: number) => {
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (channelRef.current && channelRef.current.channel) {
+      channelRef.current.channel.send({
         type: 'broadcast',
         event: 'level_advanced',
         payload: { targetLevel }
@@ -218,8 +238,8 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSystem: true
     };
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (channelRef.current && channelRef.current.channel) {
+      channelRef.current.channel.send({
         type: 'broadcast',
         event: 'new_message',
         payload: msg
@@ -238,8 +258,8 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isAidProposal: true
     };
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (channelRef.current && channelRef.current.channel) {
+      channelRef.current.channel.send({
         type: 'broadcast',
         event: 'new_message',
         payload: msg
@@ -257,8 +277,8 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (channelRef.current && channelRef.current.channel) {
+      channelRef.current.channel.send({
         type: 'broadcast',
         event: 'new_message',
         payload: msg
@@ -285,7 +305,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       broadcastAidProposal,
       broadcastChatMessage,
       broadcastLevelAdvance,
-      channelRef: channelRef.current
+      channelRef: channelRef.current?.channel
     }}>
       {children}
     </TeamSyncContext.Provider>

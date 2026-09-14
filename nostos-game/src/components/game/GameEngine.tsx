@@ -226,14 +226,13 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
     if (isEveryoneDone && !isPending) {
       startTransition(async () => {
         try {
-          broadcastLevelAdvance(levelNumber + 1);
           await confirmAdvance(levelNumber);
         } catch (e) {
           console.error(e);
         }
       });
     }
-  }, [isEveryoneDone, isPending, levelNumber, broadcastLevelAdvance]);
+  }, [isEveryoneDone, isPending, levelNumber]);
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 relative z-10 text-center">
