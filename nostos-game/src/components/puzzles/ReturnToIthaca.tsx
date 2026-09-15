@@ -11,6 +11,13 @@ interface ReturnToIthacaProps {
   storyText?: string;
 }
 
+const LOCK_VARIATIONS = [
+  { id: 1, r1: { eq: "(4 × 3) - 2", ans: 10 }, r2: { eq: "(18 - 6) ÷ 12", ans: 1 }, r3: { eq: "(7 × 3) - 9", ans: 12 } },
+  { id: 2, r1: { eq: "(5 × 4) - 5", ans: 15 }, r2: { eq: "(24 ÷ 3) + 1", ans: 9 }, r3: { eq: "(8 × 2) - 4", ans: 12 } },
+  { id: 3, r1: { eq: "3³ - 12", ans: 15 }, r2: { eq: "(100 ÷ 10) - 2", ans: 8 }, r3: { eq: "(6 × 4) - 20", ans: 4 } },
+  { id: 4, r1: { eq: "(9 × 3) - 7", ans: 20 }, r2: { eq: "(36 ÷ 6) + 3", ans: 9 }, r3: { eq: "5² - 14", ans: 11 } }
+];
+
 export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   const [phase, setPhase] = useState<1 | 2 | 3 | 4>(1); // Phase 1: Tapestry, 2: Odyssey Lock, 3: 2D Bow & Arrow, 4: Victory
   
@@ -66,6 +73,12 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   const [ring1, setRing1] = useState(0);
   const [ring2, setRing2] = useState(0);
   const [ring3, setRing3] = useState(0);
+  const [lockVariation, setLockVariation] = useState(LOCK_VARIATIONS[0]);
+  const [lockError, setLockError] = useState(false);
+
+  useEffect(() => {
+    setLockVariation(LOCK_VARIATIONS[Math.floor(Math.random() * LOCK_VARIATIONS.length)]);
+  }, []);
 
   // Phase 3: 2D Bow & Arrow Canvas Game
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -220,12 +233,13 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
 
   // (Phase 1 auto-advances now)
 
-  // Phase 2 Lock Submit (Ring 1 = (4x3)-2 = 10, Ring 2 = (18-6)/12 = 1, Ring 3 = (7x3)-9 = 12)
+  // Phase 2 Lock Submit
   const handleLockSubmit = () => {
-    if (ring1 === 10 && ring2 === 1 && ring3 === 12) {
+    if (ring1 === lockVariation.r1.ans && ring2 === lockVariation.r2.ans && ring3 === lockVariation.r3.ans) {
       setPhase(3);
     } else {
-      alert("The palace lock resists! Solve the math equations: Ring 1: (4 × 3) - 2 = 10, Ring 2: (18 - 6) ÷ 12 = 1, Ring 3: (7 × 3) - 9 = 12.");
+      setLockError(true);
+      setTimeout(() => setLockError(false), 2500);
     }
   };
 
@@ -761,7 +775,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
             {/* Dial 1 */}
             <div className="flex flex-col items-center space-y-3">
               <span className="text-gold font-serif text-xs md:text-sm font-bold tracking-wider bg-gold/15 border border-gold/40 px-3 py-1 rounded-lg text-center">
-                (4 × 3) - 2
+                {lockVariation.r1.eq}
               </span>
               <div className="flex items-center space-x-2">
                 <button onClick={() => setRing1(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
@@ -778,7 +792,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
             {/* Dial 2 */}
             <div className="flex flex-col items-center space-y-3">
               <span className="text-gold font-serif text-xs md:text-sm font-bold tracking-wider bg-gold/15 border border-gold/40 px-3 py-1 rounded-lg text-center">
-                (18 - 6) ÷ 12
+                {lockVariation.r2.eq}
               </span>
               <div className="flex items-center space-x-2">
                 <button onClick={() => setRing2(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
@@ -795,7 +809,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
             {/* Dial 3 */}
             <div className="flex flex-col items-center space-y-3">
               <span className="text-gold font-serif text-xs md:text-sm font-bold tracking-wider bg-gold/15 border border-gold/40 px-3 py-1 rounded-lg text-center">
-                (7 × 3) - 9
+                {lockVariation.r3.eq}
               </span>
               <div className="flex items-center space-x-2">
                 <button onClick={() => setRing3(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
@@ -816,6 +830,12 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
           >
             Attempt to Unlock Gates →
           </button>
+          
+          {lockError && (
+            <p className="mt-4 text-danger font-serif italic font-bold animate-shake text-center text-sm md:text-base">
+              The heavy gears grind to a halt. The combination is incorrect!
+            </p>
+          )}
         </div>
       )}
 
