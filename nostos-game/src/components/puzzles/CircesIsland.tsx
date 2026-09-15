@@ -129,15 +129,7 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
   const handleHotspotClick = (index: number) => {
     if (found[index] || animatingAction) return;
 
-    // If no tool selected, auto-select matching tool for this object!
-    let activeTool = selectedTool;
-    if (!activeTool) {
-      const matchingTool = TOOLS.find(t => t.targetIdx === index);
-      if (matchingTool) {
-        activeTool = matchingTool.id;
-        setSelectedTool(matchingTool.id);
-      }
-    }
+    const activeTool = selectedTool;
 
     const currentToolObj = TOOLS.find(t => t.id === activeTool);
     if (currentToolObj && currentToolObj.targetIdx === index) {
