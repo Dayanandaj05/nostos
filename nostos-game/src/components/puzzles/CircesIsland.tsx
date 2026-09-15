@@ -33,10 +33,10 @@ interface CircesIslandProps {
 }
 
 const TOOLS = [
-  { id: "sickle", name: "Bronze Sickle", icon: Scissors, targetIdx: 0, hint: "Cut the overgrown magical thorny vines" },
-  { id: "key", name: "Golden Key", icon: Key, targetIdx: 1, hint: "Unlock the entrance to Circe's grand palace" },
-  { id: "torch", name: "Sacred Torch", icon: Flame, targetIdx: 2, hint: "Illuminate the dark marble altar shrine" },
-  { id: "ladle", name: "Magic Ladle", icon: Utensils, targetIdx: 3, hint: "Stir the bubbling crimson elixir cauldron" },
+  { id: "sickle", name: "Bronze Sickle", icon: Scissors, targetIdx: 0, hint: "A curved blade, sharp enough to sever the strongest bonds." },
+  { id: "key", name: "Golden Key", icon: Key, targetIdx: 1, hint: "An ornate key, cold to the touch but humming with potential." },
+  { id: "torch", name: "Sacred Torch", icon: Flame, targetIdx: 2, hint: "It bears an eternal flame that banishes the deepest shadows." },
+  { id: "ladle", name: "Magic Ladle", icon: Utensils, targetIdx: 3, hint: "A heavy iron spoon, stained with centuries of arcane brews." },
 ];
 
 const VISUAL_ELEMENTS = [
@@ -160,11 +160,14 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
         setSelectedTool(null);
       }, 1100);
     } else {
-      const requiredTool = TOOLS.find(t => t.targetIdx === index);
-      if (requiredTool) {
-        setToolHint(`Equip the ${requiredTool.name} to interact with this area!`);
-        setTimeout(() => setToolHint(null), 3000);
-      }
+      const hints = [
+        "The magical thorny vines are far too thick to break by hand...",
+        "The heavy palace doors are magically sealed shut...",
+        "The marble shrine is shrouded in an impenetrable darkness...",
+        "The crimson elixir bubbles violently; it needs to be mixed..."
+      ];
+      setToolHint(hints[index]);
+      setTimeout(() => setToolHint(null), 3500);
     }
   };
 
