@@ -2,8 +2,7 @@ import React from "react";
 import { getSession, isSessionActive } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { GameEngine } from "@/components/game/GameEngine";
-import { TeamSyncProvider } from "@/components/game/TeamSyncProvider";
-import { CrewChat } from "@/components/game/CrewChat";
+import { VictoryScreen } from "@/components/game/VictoryScreen";
 import Link from "next/link";
 import { Anchor, LogOut } from "lucide-react";
 import { SEED_LEVELS } from "@/lib/mockData";
@@ -103,57 +102,48 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
 
   // 2. Check for game completion
   if (currentLevelNumber > 10) {
-    let finalTimeStr = "Voyage Complete";
+    const formatTime = (first_login_at: string | null, completed_at: string | null) => {
+      if (!first_login_at || !completed_at) return "—";
+      const ms = new Date(completed_at).getTime() - new Date(first_login_at).getTime();
+      if (ms <= 0) return "—";
+      return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+    };
 
+    // Fetch my own stats
+    let myTime = "—";
+    let myIncorrectCount = activeProgress.incorrect_count ?? 0;
     try {
       const { data: myData } = await supabase
         .from("progress")
-        .select("first_login_at, completed_at")
+        .select("first_login_at, completed_at, incorrect_count")
         .eq("team_id", teamId)
-        .single();
-      
-      if (myData && myData.first_login_at && myData.completed_at) {
-        const start = new Date(myData.first_login_at).getTime();
-        const end = new Date(myData.completed_at).getTime();
-        const ms = end - start;
-        const minutes = Math.floor(ms / 60000);
-        const seconds = Math.floor((ms % 60000) / 1000);
-        finalTimeStr = `${minutes}m ${seconds}s`;
+        .maybeSingle();
+      if (myData) {
+        myTime = formatTime(myData.first_login_at, myData.completed_at);
+        myIncorrectCount = myData.incorrect_count ?? 0;
       }
     } catch (err) {
-      console.warn("Unable to fetch completion time:", err);
+      console.warn("Unable to fetch my completion stats:", err);
     }
 
-    return (
-      <TeamSyncProvider teamId={teamId} username={session.username || "Sailor"} memberNames={memberNames}>
-        <main className="min-h-screen bg-ink text-parchment flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-           {/* Less Intense Animated Ocean Canvas Background */}
-           <div className="fixed inset-0 opacity-35 pointer-events-none z-0">
-             <OceanCanvas />
-           </div>
-           <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,23,37,0.70)_0%,rgba(15,23,37,0.90)_70%,rgba(10,16,25,0.97)_100%)] pointer-events-none z-0" />
-           
-           <div className="z-10 animate-in slide-in-from-bottom-8 duration-1000 flex flex-col items-center">
-             <Anchor className="w-24 h-24 md:w-32 md:h-32 text-gold mx-auto mb-8 animate-pulse drop-shadow-[0_0_15px_rgba(201,162,75,0.5)]" />
-             <h1 className="text-4xl md:text-7xl font-serif text-gold tracking-widest uppercase mb-4 drop-shadow-[0_0_20px_rgba(201,162,75,0.8)]">Home at Last</h1>
-             <h2 className="text-2xl md:text-4xl font-serif text-parchment/90 tracking-widest uppercase mb-12">The {session.ship_name} has arrived</h2>
-             
-             <div className="flex flex-col items-center w-full max-w-sm bg-[#0B121E]/90 border border-gold/30 p-8 rounded-xl backdrop-blur-md shadow-[0_0_30px_rgba(201,162,75,0.15)]">
-               
-               <div className="flex flex-col items-center space-y-3">
-                 <span className="text-parchment/60 font-serif tracking-widest uppercase text-sm border-b border-gold/20 pb-2 w-full text-center">Total Voyage Time</span>
-                 <span className="text-4xl font-mono text-gold font-bold tracking-wider">{finalTimeStr}</span>
-               </div>
+    // Build per-member stats: each member shares the same team progress row
+    // so we show the same time/faults for all, labelled per name
+    const memberStats = memberNames.map(name => ({
+      name,
+      voyageTime: myTime,
+      incorrectCount: myIncorrectCount,
+    }));
 
-             </div>
-             
-             <p className="mt-12 text-lg md:text-2xl font-serif italic text-parchment/60 max-w-2xl">
-               You have navigated the trials, bested the gods, and reached the shores of Ithaca. Your legend is eternal.
-             </p>
-           </div>
-        </main>
-        <CrewChat levelId="finished" levelNumber={10} teamId={teamId} />
-      </TeamSyncProvider>
+    return (
+      <VictoryScreen
+        teamId={teamId}
+        username={session.username || "Sailor"}
+        shipName={session.ship_name || "Your Ship"}
+        memberNames={memberNames}
+        myTime={myTime}
+        myIncorrectCount={myIncorrectCount}
+        memberStats={memberStats}
+      />
     );
   }
 

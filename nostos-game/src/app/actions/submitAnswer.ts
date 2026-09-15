@@ -172,6 +172,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
         correct_count: (progress.correct_count || 0) + 1,
         last_updated_at: new Date().toISOString(),
       };
+      if (isCompleted) updateData.completed_at = new Date().toISOString();
 
       const tUpStart = Date.now();
       const { error: updateErr } = await supabase
