@@ -27,7 +27,14 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
     const phone = formData.get(`phone_${i}`)?.toString().trim();
     
     if (member) {
-      if (!phone) errors.general = `Please provide a mobile number for ${member}.`;
+      if (!phone) {
+        errors.general = `Please provide a mobile number for ${member}.`;
+      } else {
+        const indianPhoneRegex = /^(?:\+91[-.\s]?|91[-.\s]?|0)?[6-9]\d{9}$/;
+        if (!indianPhoneRegex.test(phone)) {
+          errors.general = `Please provide a valid Indian mobile number for ${member}.`;
+        }
+      }
       member_names.push(member);
       member_phones.push(phone || "");
     }

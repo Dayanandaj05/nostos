@@ -136,7 +136,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                    <Input name="phone_1" type="tel" placeholder="+1 234 567 8900" />
+                    <Input name="phone_1" type="tel" placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
@@ -147,7 +147,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                    <Input name="phone_2" type="tel" placeholder="+1 234 567 8900" />
+                    <Input name="phone_2" type="tel" placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
@@ -158,7 +158,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                    <Input name="phone_3" type="tel" placeholder="+1 234 567 8900" />
+                    <Input name="phone_3" type="tel" placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
@@ -173,7 +173,7 @@ export default function RegisterPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                      <Input name="phone_4" type="tel" placeholder="+1 234 567 8900" />
+                      <Input name="phone_4" type="tel" placeholder="+91 98765 43210" />
                     </div>
                   </div>
                   ) : (
