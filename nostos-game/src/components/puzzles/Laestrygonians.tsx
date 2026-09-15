@@ -178,17 +178,9 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
   };
 
   const handleWin = () => {
-    const form = document.getElementById('oracle-form') as HTMLFormElement;
-    if (form) {
-      const input = form.querySelector('input[name="answer"]') as HTMLInputElement;
-      if (input) {
-        input.value = "6_CORRECT";
-        // Auto submit after a short delay to let them see the victory state
-        setTimeout(() => {
-          document.getElementById('oracle-submit-btn')?.click();
-        }, 1800);
-      }
-    }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: "6_CORRECT" }));
+      }, 1800);
   };
 
   if (questions.length === 0) return null;

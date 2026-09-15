@@ -275,6 +275,20 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
   const formRef = useRef<HTMLFormElement>(null);
   const { connectedMembers, readyMembers, markReady } = useTeamSync();
 
+  // Allow puzzle components to trigger form submission programmatically
+  React.useEffect(() => {
+    const handleCustomSubmit = (e: any) => {
+      const answer = e.detail;
+      const fd = new FormData();
+      fd.append("answer", answer);
+      React.startTransition(() => {
+        formAction(fd);
+      });
+    };
+    window.addEventListener("nostos-oracle-submit", handleCustomSubmit);
+    return () => window.removeEventListener("nostos-oracle-submit", handleCustomSubmit);
+  }, [formAction]);
+
   const currentIncorrectCount = state.incorrect_count ?? progress.incorrect_count;
   
   const [localSolved, setLocalSolved] = useState(false);

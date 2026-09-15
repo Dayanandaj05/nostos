@@ -53,28 +53,15 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
     const currentPuzzle = data.paths[committedPath as 'A' | 'B'];
     if (localInput.trim().toUpperCase() === currentPuzzle.a.toUpperCase()) {
       // Correct! Submit to Oracle
-      const oracleForm = document.getElementById('oracle-form') as HTMLFormElement;
-      if (oracleForm) {
-        const oracleInput = oracleForm.querySelector('input[name="answer"]') as HTMLInputElement;
-        if (oracleInput) {
-          oracleInput.value = "DEPENDS_ON_PATH";
-          document.getElementById('oracle-submit-btn')?.click();
-        }
-      }
+      const finalAnswer = "DEPENDS_ON_PATH";
+      window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: finalAnswer }));
     } else {
       // Incorrect
       setLocalError(true);
       setTimeout(() => setLocalError(false), 800);
       
       // Also silently submit a dummy wrong answer to the Oracle to increment the global "gods laugh" counter
-      const oracleForm = document.getElementById('oracle-form') as HTMLFormElement;
-      if (oracleForm) {
-        const oracleInput = oracleForm.querySelector('input[name="answer"]') as HTMLInputElement;
-        if (oracleInput) {
-          oracleInput.value = "WRONG_PATH_ANSWER";
-          document.getElementById('oracle-submit-btn')?.click();
-        }
-      }
+      window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: "WRONG_PATH_ANSWER" }));
     }
   };
 

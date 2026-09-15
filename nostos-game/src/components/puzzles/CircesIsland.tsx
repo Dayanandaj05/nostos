@@ -569,13 +569,9 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
 
           {tiles.map(t => t.letter).join("") === "MOLY" ? (
             <button
-              onClick={() => {
-                const form = document.getElementById('oracle-form') as HTMLFormElement;
-                if (form) {
-                  const input = form.querySelector('input[name="answer"]') as HTMLInputElement;
-                  if (input) input.value = "MOLY";
-                  document.getElementById('oracle-submit-btn')?.click();
-                }
+              onClick={(e) => {
+                e.stopPropagation();
+                window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: "MOLY" }));
               }}
               className="w-full py-3.5 bg-gold hover:bg-gold-light text-ink font-serif text-lg font-bold uppercase tracking-widest rounded-xl shadow-xl transition-all hover:scale-105"
             >

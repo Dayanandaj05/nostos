@@ -29,25 +29,8 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
   const triggerOracleSubmit = () => {
     setDoorOpen(true);
     setTimeout(() => {
-      const parentForm = document.getElementById('oracle-form') as HTMLFormElement;
-      if (parentForm) {
-        const input = parentForm.querySelector('input[name="answer"]') as HTMLInputElement;
-        if (input) {
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-          const finalAnswer = riddles[0]?.a || "ECHO";
-          if (nativeInputValueSetter) {
-            nativeInputValueSetter.call(input, finalAnswer);
-          } else {
-            input.value = finalAnswer;
-          }
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        const submitBtn = document.getElementById('oracle-submit-btn');
-        if (submitBtn) {
-          submitBtn.click();
-        }
-      }
+      const finalAnswer = riddles[0]?.a || "ECHO";
+      window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: finalAnswer }));
     }, 1400);
   };
 

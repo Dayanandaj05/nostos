@@ -41,16 +41,11 @@ export function CattleOfHelios({ data, incorrectCount }: CattleOfHeliosProps) {
     setPenaltyTime(12); // 12 seconds penalty
     
     // Ghost submission to increment global incorrect counter
-    const oracleForm = document.getElementById('oracle-form') as HTMLFormElement;
-    if (oracleForm) {
-      const oracleInput = oracleForm.querySelector('input[name="answer"]') as HTMLInputElement;
-      if (oracleInput) {
-        oracleInput.value = "DECOY_TRIGGERED";
-        document.getElementById('oracle-submit-btn')?.click();
-        // Clear it back
-        setTimeout(() => { oracleInput.value = realAnswer; }, 100);
-      }
-    }
+    window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: "DECOY_TRIGGERED" }));
+    setTimeout(() => { 
+      // silently re-submit real answer to sync with server?
+      // Actually, we shouldn't submit real answer here because they haven't finished.
+    }, 100);
   };
 
   useEffect(() => {
