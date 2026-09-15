@@ -11,6 +11,8 @@ export type RegisterState = {
     member_names?: string;
     general?: string;
   };
+  fields?: Record<string, string>;
+  timestamp?: number;
 };
 
 export async function registerTeam(prevState: RegisterState, formData: FormData): Promise<RegisterState> {
@@ -22,10 +24,18 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
   const member_phones: string[] = [];
   const errors: RegisterState["errors"] = {};
 
+  const fields: Record<string, string> = {
+    ship_name: ship_name || "",
+    password: password || "",
+  };
+
   for (let i = 1; i <= 4; i++) {
     const member = formData.get(`member_${i}`)?.toString().trim();
     const phone = formData.get(`phone_${i}`)?.toString().trim();
     
+    if (member !== undefined) fields[`member_${i}`] = member;
+    if (phone !== undefined) fields[`phone_${i}`] = phone;
+
     if (member) {
       if (!phone) {
         errors.general = `Please provide a mobile number for ${member}.`;
@@ -47,7 +57,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
   if (member_names.length < 3) errors.member_names = "A crew requires at least 3 members.";
 
   if (Object.keys(errors).length > 0) {
-    return { success: false, errors };
+    return { success: false, errors, fields, timestamp: Date.now() };
   }
 
   try {
@@ -60,7 +70,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
     if (checkError) throw checkError;
 
     if (existingTeam) {
-      return { success: false, errors: { ship_name: "That ship is already sailing these waters." } };
+      return { success: false, errors: { ship_name: "That ship is already sailing these waters." }, fields, timestamp: Date.now() };
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -99,7 +109,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
       globalForDev.mockDevProgress = globalForDev.mockDevProgress || {};
 
       if (globalForDev.mockDevTeams.find((t: any) => t.ship_name.toLowerCase() === ship_name!.toLowerCase())) {
-        return { success: false, errors: { ship_name: "That ship is already sailing these waters." } };
+        return { success: false, errors: { ship_name: "That ship is already sailing these waters." }, fields, timestamp: Date.now() };
       }
 
       const salt = await bcrypt.genSalt(10);
@@ -112,7 +122,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
       return { success: true };
     } else {
       console.error("[registerTeam] Fatal error during registration:", e);
-      return { success: false, errors: { general: "The Oracle rejected your registration. " + (e?.message || "Unknown error") } };
+      return { success: false, errors: { general: "The Oracle rejected your registration. " + (e?.message || "Unknown error") }, fields, timestamp: Date.now() };
     }
   }
 

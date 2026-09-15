@@ -87,7 +87,7 @@ export default function RegisterPage() {
 
           {state.errors?.general && <ErrorBanner message={state.errors.general} className="mb-8" />}
 
-          <form action={formAction} className="space-y-12">
+          <form action={formAction} key={state.timestamp || "init"} className="space-y-12">
 
             {/* Vessel */}
             <div className="space-y-8">
@@ -115,6 +115,7 @@ export default function RegisterPage() {
                 <Input
                   name="password"
                   type="password"
+                  defaultValue={state.fields?.password || ""}
                   isError={!!state.errors?.password}
                   placeholder="A secret for the crew"
                 />
@@ -132,33 +133,33 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">First Sailor (Captain)</label>
-                    <Input name="member_1" placeholder="Name" />
+                    <Input name="member_1" defaultValue={state.fields?.member_1 || ""} placeholder="Name" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                    <Input name="phone_1" type="tel" placeholder="+91 98765 43210" />
+                    <Input name="phone_1" type="tel" defaultValue={state.fields?.phone_1 || ""} placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Second Sailor</label>
-                    <Input name="member_2" placeholder="Name" />
+                    <Input name="member_2" defaultValue={state.fields?.member_2 || ""} placeholder="Name" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                    <Input name="phone_2" type="tel" placeholder="+91 98765 43210" />
+                    <Input name="phone_2" type="tel" defaultValue={state.fields?.phone_2 || ""} placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Third Sailor</label>
-                    <Input name="member_3" placeholder="Name" />
+                    <Input name="member_3" defaultValue={state.fields?.member_3 || ""} placeholder="Name" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                    <Input name="phone_3" type="tel" placeholder="+91 98765 43210" />
+                    <Input name="phone_3" type="tel" defaultValue={state.fields?.phone_3 || ""} placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
@@ -169,11 +170,11 @@ export default function RegisterPage() {
                         <span>Fourth Sailor</span>
                         <button type="button" onClick={() => setShowFourthMember(false)} className="text-danger/60 hover:text-danger hover:underline">Remove</button>
                       </label>
-                      <Input name="member_4" placeholder="Name" />
+                      <Input name="member_4" defaultValue={state.fields?.member_4 || ""} placeholder="Name" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
-                      <Input name="phone_4" type="tel" placeholder="+91 98765 43210" />
+                      <Input name="phone_4" type="tel" defaultValue={state.fields?.phone_4 || ""} placeholder="+91 98765 43210" />
                     </div>
                   </div>
                   ) : (
