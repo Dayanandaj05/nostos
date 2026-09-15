@@ -201,45 +201,43 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
   const { connectedMembers, doneMembers, activeMemberNames, deviceAlias, markDone } = useTeamSync();
   const [isPending, startTransition] = useTransition();
 
-  const amIDone = doneMembers.some(m => m.alias.toLowerCase() === deviceAlias.toLowerCase() && m.isDone);
+  const [advanced, setAdvanced] = useState(false);
 
   const registeredCrew = activeMemberNames.length > 0 ? activeMemberNames : connectedMembers.map(m => m.alias);
 
-  const isEveryoneDone = registeredCrew.length > 0 && registeredCrew.every(name =>
-    doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
-  );
+  const doneCount = doneMembers.filter(m => m.isDone).length;
+  const totalCount = Math.max(registeredCrew.length, connectedMembers.length, 1);
 
-  // Auto-mark done when reaching this gate
+  // Mark myself done immediately on mount
   React.useEffect(() => {
-    if (!amIDone) {
-      markDone(true);
-    }
-  }, [amIDone, markDone]);
+    markDone(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-advance when everyone is done
+  // Advance immediately — the DB race-condition guard in confirmAdvance prevents double-advances.
+  // All other devices receive the postgres_changes event and router.refresh() automatically.
   React.useEffect(() => {
-    if (isEveryoneDone && !isPending) {
-      startTransition(async () => {
-        try {
-          await confirmAdvance(levelNumber);
-        } catch (e) {
-          console.error(e);
-        }
-      });
-    }
-  }, [isEveryoneDone, isPending, levelNumber]);
+    if (advanced || isPending) return;
+    setAdvanced(true);
+    startTransition(async () => {
+      try {
+        await confirmAdvance(levelNumber);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 relative z-10 text-center">
       <Anchor className="w-16 h-16 text-gold mx-auto opacity-80" />
       <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">The Trial is Bested</h2>
       <p className="text-parchment/70 font-serif text-lg italic max-w-lg mx-auto">
-        Your answer was true. Wait for your crew to finish their trials before setting sail.
+        Your answer was true. Advancing the crew to the next trial...
       </p>
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
         <h3 className="text-xs uppercase tracking-widest text-parchment/50 font-bold mb-4 border-b border-gold/10 pb-2">
-          Crew Completion Status ({doneMembers.length} / {registeredCrew.length} Finished)
+          Crew Completion Status ({doneCount} / {totalCount} Finished)
         </h3>
         <ul className="space-y-4">
           {registeredCrew.map((name: string) => {
@@ -261,27 +259,9 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
         </ul>
       </Card>
 
-      <div className="space-y-4 mt-8">
-        {isEveryoneDone ? (
-          <div className="flex flex-col items-center space-y-4">
-            <p className="text-gold font-serif text-xl animate-pulse">All crew members are ready.</p>
-            <button
-              onClick={() => startTransition(async () => {
-                await confirmAdvance(levelNumber);
-                window.location.reload(); // Hard fallback
-              })}
-              disabled={isPending}
-              className="px-8 py-3 bg-gold/20 hover:bg-gold/40 border border-gold rounded text-gold font-bold tracking-widest uppercase transition-all"
-            >
-              {isPending ? "Setting Sail..." : "Set Sail for the Next Trial"}
-            </button>
-          </div>
-        ) : (
-          <p className="text-gold/80 font-serif italic animate-pulse text-lg">
-            Waiting for the rest of the crew...
-          </p>
-        )}
-      </div>
+      <p className="text-gold/80 font-serif italic animate-pulse text-lg">
+        {isPending ? "Setting sail..." : "Waiting for all crew devices to sync..."}
+      </p>
     </div>
   );
 }
@@ -327,12 +307,11 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
     }
   }, [state.success, storageKey]);
 
-  // A puzzle is successfully solved if either the global progress says so (from the team advancing)
-  // or our local state says so (we personally solved it).
+  // The readiness gate is shown until this device has clicked ready.
+  // We don't block on other crew members — the DB progress_changes listener
+  // ensures everyone is on the same level before the puzzle loads.
   const isSolved = localSolved || (state.success && state.completed_level === level.level_number);
-
-  // The readiness gate is passed if everyone connected has marked ready, or during initial connection load.
-  const isAllReady = connectedMembers.length === 0 || readyMembers.length === connectedMembers.length;
+  const iAmReady = readyMembers.some(m => m.alias.toLowerCase() === username.toLowerCase() && m.isReady);
 
   if (isSolved) {
     return (
@@ -342,7 +321,7 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
     );
   }
 
-  if (!isAllReady) {
+  if (!iAmReady) {
     return (
       <div className="w-full">
         <ReadinessGate levelNumber={level.level_number} onReady={() => markReady(true)} />
