@@ -4,6 +4,9 @@ import { supabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import { AdminClient } from "./AdminClient";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AdminPage() {
   const session = await getSession();
   
