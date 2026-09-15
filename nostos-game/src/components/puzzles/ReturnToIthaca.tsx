@@ -46,6 +46,16 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   const arrowStateRef = useRef(arrowState);
   useEffect(() => { arrowStateRef.current = arrowState; }, [arrowState]);
 
+  // Trick Mechanics: Extinguish Torches
+  const [torch1Lit, setTorch1Lit] = useState(true);
+  const [torch2Lit, setTorch2Lit] = useState(true);
+  
+  const torch1LitRef = useRef(torch1Lit);
+  useEffect(() => { torch1LitRef.current = torch1Lit; }, [torch1Lit]);
+
+  const torch2LitRef = useRef(torch2Lit);
+  useEffect(() => { torch2LitRef.current = torch2Lit; }, [torch2Lit]);
+
   // Keep mousePosRef synced
   useEffect(() => {
     mousePosRef.current = mousePos;
@@ -253,24 +263,46 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
       const currentArrowState = arrowStateRef.current;
       const currentMousePos = mousePosRef.current;
 
+      const currentTorch1Lit = torch1LitRef.current;
+      const currentTorch2Lit = torch2LitRef.current;
+      const isFocusMode = !currentTorch1Lit && !currentTorch2Lit;
+
       // 1. Grand Palace Hall Background
-      ctx.fillStyle = grad;
+      ctx.fillStyle = isFocusMode ? '#030509' : grad; // Darken room if focus mode
       ctx.fillRect(0, 0, width, height);
 
       // Ambient Torch Lights
-      ctx.fillStyle = torchLeft;
-      ctx.fillRect(0, 0, 300, height);
+      if (currentTorch1Lit) {
+        ctx.fillStyle = torchLeft;
+        ctx.fillRect(0, 0, 300, height);
+      }
+      if (currentTorch2Lit) {
+        ctx.fillStyle = torchRight;
+        ctx.fillRect(600, 0, 300, height);
+      }
 
-      ctx.fillStyle = torchRight;
-      ctx.fillRect(600, 0, 300, height);
-
-      // Torch Flame Animation
+      // Torch Base and Flame Animation
       const flameFlicker = Math.sin(time * 12) * 3;
-      ctx.fillStyle = '#f97316';
-      ctx.beginPath();
-      ctx.arc(60, 180, 9 + flameFlicker, 0, Math.PI * 2);
-      ctx.arc(840, 180, 9 + flameFlicker, 0, Math.PI * 2);
-      ctx.fill();
+      
+      // Draw Torch 1
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(55, 180, 10, 40); // Base
+      if (currentTorch1Lit) {
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.arc(60, 180, 9 + flameFlicker, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw Torch 2
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(835, 180, 10, 40); // Base
+      if (currentTorch2Lit) {
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.arc(840, 180, 9 + flameFlicker, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Stone Floor & Pillar Accents
       ctx.fillStyle = '#0f172a';
@@ -303,10 +335,18 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
         targetY = 270 + Math.sin(time * 3.8) * 90; // Extremely fast moving target
       }
 
+      // FOCUS MODE: THE TRICK IS ACTIVATED
+      if (isFocusMode) {
+        speedMult = 0; // Freeze axes
+        oscAmp = 0;
+        windX = 0; // Stop wind
+        targetY = 270; // Freeze target in the middle
+      }
+
       // 3. 12 Moving Axe Heads
       AXE_X_POSITIONS.forEach((x, idx) => {
-        // High chaos oscillation for each individual axe
-        const oscY = 250 + Math.sin(time * speedMult * 2.5 + idx * 1.8) * oscAmp;
+        // High chaos oscillation for each individual axe (frozen perfectly if in focus mode)
+        const oscY = 250 + (isFocusMode ? 0 : Math.sin(time * speedMult * 2.5 + idx * 1.8) * oscAmp);
 
         // Wooden Handle
         ctx.strokeStyle = '#78350f';
@@ -589,6 +629,17 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     const scaleY = 450 / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
+    
+    // Check for torch clicks
+    if (torch1Lit && Math.hypot(x - 60, y - 180) < 40) {
+      setTorch1Lit(false);
+      return;
+    }
+    if (torch2Lit && Math.hypot(x - 840, y - 180) < 40) {
+      setTorch2Lit(false);
+      return;
+    }
+
     setMousePos({ x, y });
     setIsAiming(true);
   };
@@ -598,11 +649,22 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     const canvas = canvasRef.current;
     if (!canvas || e.touches.length === 0) return;
     const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
     const scaleX = 900 / rect.width;
     const scaleY = 450 / rect.height;
-    const touch = e.touches[0];
     const x = (touch.clientX - rect.left) * scaleX;
     const y = (touch.clientY - rect.top) * scaleY;
+
+    // Check for torch clicks
+    if (torch1Lit && Math.hypot(x - 60, y - 180) < 40) {
+      setTorch1Lit(false);
+      return;
+    }
+    if (torch2Lit && Math.hypot(x - 840, y - 180) < 40) {
+      setTorch2Lit(false);
+      return;
+    }
+
     setMousePos({ x, y });
     setIsAiming(true);
   };
