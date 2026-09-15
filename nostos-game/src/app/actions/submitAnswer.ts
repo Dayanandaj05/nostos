@@ -172,7 +172,10 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
         correct_count: (progress.correct_count || 0) + 1,
         last_updated_at: new Date().toISOString(),
       };
-      if (isCompleted) updateData.completed_at = new Date().toISOString();
+      if (isCompleted) {
+        updateData.completed_at = new Date().toISOString();
+        updateData.current_level = 11; // Trigger the Victory Screen
+      }
 
       const tUpStart = Date.now();
       const { error: updateErr } = await supabase
@@ -190,7 +193,7 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       const g = globalThis as any;
       g.mockDevProgressState = g.mockDevProgressState || {};
       g.mockDevProgressState[teamId] = {
-        current_level: currentLevel,
+        current_level: isCompleted ? 11 : currentLevel,
         correct_count: (progress.correct_count || 0) + 1,
         incorrect_count: progress.incorrect_count || 0
       };
