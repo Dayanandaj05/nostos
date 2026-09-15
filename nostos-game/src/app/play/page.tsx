@@ -8,6 +8,7 @@ import { Anchor, LogOut } from "lucide-react";
 import { SEED_LEVELS } from "@/lib/mockData";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 import { logoutTeam } from "@/app/actions/auth";
+import { GodMessageListener } from "@/components/game/GodMessageListener";
 
 export default async function PlayPage({ searchParams }: { searchParams?: Promise<{ level?: string }> }) {
   const session = await getSession();
@@ -216,6 +217,9 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
 
       {/* The Engine */}
       <GameEngine level={level} progress={activeProgress} teamId={teamId} username={session.username || "Sailor"} memberNames={memberNames} />
+
+      {/* Message from the Gods Listener */}
+      <GodMessageListener />
 
     </main>
   );
