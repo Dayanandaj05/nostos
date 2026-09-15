@@ -51,6 +51,23 @@ This document provides a comprehensive breakdown of the 10 core trials in the NO
 * **How to Solve:**
   The players must correctly answer 6 randomly generated math questions before the timer reaches zero. Upon the 6th correct answer, the component automatically submits a hidden override code to the game engine.
   * **Hidden System Answer:** `6_CORRECT` *(Players don't type this; surviving the mini-game submits it automatically)*
+  
+  **Question Bank & Answers:**
+  - `Roman Math: CLXXV - L` ➔ **125**
+  - `Math: (14 * 6) - (48 / 4)` ➔ **72**
+  - `Sequence: 100, 96, 88, 72, 40, ?` ➔ **-24**
+  - `Sequence: 3, 7, 15, 31, ?` ➔ **63**
+  - `Math: (120 / 5) * 3 - 42` ➔ **30**
+  - `Roman Math: XCIV + XXVI` ➔ **120**
+  - `Math: 4² + 3³ - 15` ➔ **28**
+  - `Unscramble: P I S H` ➔ **SHIP**
+  - `Unscramble: C H O A R N` ➔ **ANCHOR**
+  - `Odd one out: GALLEY, TRIREME, FRIGATE, CHARIOT` ➔ **CHARIOT**
+  - `Odd one out: ZEUS, POSEIDON, HERCULES, HADES` ➔ **HERCULES**
+  - `Odd one out: MAST, RUDDER, ANCHOR, SPEAR` ➔ **SPEAR**
+  - `Sequence: 2, 6, 18, 54, ?` ➔ **162**
+  - `Math: (85 - 15) / 2 + 18` ➔ **53**
+  - `Unscramble: T R I R E M E` ➔ **TRIREME**
 
 ---
 
