@@ -74,6 +74,15 @@ export async function sendGodMessage(teamId: string, message: string) {
 
   if (error) return { success: false, error: "Failed to send message." };
   
+  // Log the message so admin can see the history
+  await supabase
+    .from("incident_logs")
+    .insert([{
+      message: `[God Message]: ${message}`,
+      reported_by: session.username || "Olympus",
+      team_id: teamId
+    }]);
+
   return { success: true };
 }
 
@@ -120,5 +129,11 @@ export async function getLiveAdminData() {
     }
   }
 
-  return { teams };
+  const { data: logs } = await supabase
+    .from("incident_logs")
+    .select("id, message, reported_by, created_at, teams(ship_name)")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  return { teams, logs: logs || [] };
 }

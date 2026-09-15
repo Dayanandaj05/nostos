@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { getLiveAdminData, sendGodMessage } from "@/app/actions/adminActions";
-import { Download, MessageSquare, Send } from "lucide-react";
+import { AlertCircle, Download, MessageSquare, Send } from "lucide-react";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
-export function AdminClient({ teams: initialTeams, currentUsername }: any) {
+export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUsername }: any) {
   const [liveTeams, setLiveTeams] = useState(initialTeams);
+  const [liveLogs, setLiveLogs] = useState(initialLogs || []);
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [godMessage, setGodMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -15,9 +16,12 @@ export function AdminClient({ teams: initialTeams, currentUsername }: any) {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const { teams } = await getLiveAdminData();
+        const { teams, logs } = await getLiveAdminData();
         if (teams) {
           setLiveTeams(teams);
+        }
+        if (logs) {
+          setLiveLogs(logs);
         }
       } catch (err) {
         console.error("Failed to poll live data", err);
@@ -98,52 +102,84 @@ export function AdminClient({ teams: initialTeams, currentUsername }: any) {
           </button>
         </header>
 
-        <div className="bg-zinc-900/60 border border-gold/30 rounded-lg p-6 shadow-2xl backdrop-blur-sm">
-          <h2 className="text-xl font-serif text-gold mb-6 uppercase tracking-widest">Live Fleet Leaderboard</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm font-mono">
-              <thead className="text-parchment/50 border-b border-zinc-800">
-                <tr>
-                  <th className="pb-3 px-4">Ship Name</th>
-                  <th className="pb-3 px-4">Current Level</th>
-                  <th className="pb-3 px-4 text-danger">Mistakes</th>
-                  <th className="pb-3 px-4 text-center">Intervention</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/50">
-                {sortedTeams.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-8 text-parchment/40 italic font-serif">
-                      No ships have entered the waters yet.
-                    </td>
-                  </tr>
-                ) : (
-                  sortedTeams.map((t: any) => (
-                    <tr key={t.team_id} className="hover:bg-zinc-800/40 transition-colors">
-                      <td className="py-4 px-4 font-serif text-gold text-lg">
-                        <div>{t.teams?.ship_name}</div>
-                        {(t.teams?.captain_name || t.teams?.captain_phone) && (
-                          <div className="text-xs text-parchment/60 font-sans mt-0.5 font-normal">
-                            Capt: {t.teams.captain_name || 'N/A'} {t.teams.captain_phone ? `• ${t.teams.captain_phone}` : ''}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-lg">{t.current_level > 10 ? 'FINISHED' : t.current_level}</td>
-                      <td className="py-4 px-4 text-danger text-lg">{t.incorrect_count || 0}</td>
-                      <td className="py-4 px-4 text-center">
-                        <button
-                          onClick={() => setSelectedTeam(t)}
-                          className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-xs uppercase tracking-wider transition-colors"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          <span>Send Hint</span>
-                        </button>
-                      </td>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Teams */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-zinc-900/60 border border-gold/30 rounded-lg p-6 shadow-2xl backdrop-blur-sm">
+              <h2 className="text-xl font-serif text-gold mb-6 uppercase tracking-widest">Live Fleet Leaderboard</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm font-mono">
+                  <thead className="text-parchment/50 border-b border-zinc-800">
+                    <tr>
+                      <th className="pb-3 px-4">Ship Name</th>
+                      <th className="pb-3 px-4">Current Level</th>
+                      <th className="pb-3 px-4 text-danger">Mistakes</th>
+                      <th className="pb-3 px-4 text-center">Intervention</th>
                     </tr>
-                  ))
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/50">
+                    {sortedTeams.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-parchment/40 italic font-serif">
+                          No ships have entered the waters yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      sortedTeams.map((t: any) => (
+                        <tr key={t.team_id} className="hover:bg-zinc-800/40 transition-colors">
+                          <td className="py-4 px-4 font-serif text-gold text-lg">
+                            <div>{t.teams?.ship_name}</div>
+                            {(t.teams?.captain_name || t.teams?.captain_phone) && (
+                              <div className="text-xs text-parchment/60 font-sans mt-0.5 font-normal">
+                                Capt: {t.teams.captain_name || 'N/A'} {t.teams.captain_phone ? `• ${t.teams.captain_phone}` : ''}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 text-lg">{t.current_level > 10 ? 'FINISHED' : t.current_level}</td>
+                          <td className="py-4 px-4 text-danger text-lg">{t.incorrect_count || 0}</td>
+                          <td className="py-4 px-4 text-center">
+                            <button
+                              onClick={() => setSelectedTeam(t)}
+                              className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-xs uppercase tracking-wider transition-colors"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              <span>Send Hint</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Incident Logs / History */}
+          <div className="space-y-8">
+            <div className="bg-zinc-900/60 border border-gold/30 rounded-lg p-6 flex flex-col h-[600px] shadow-2xl backdrop-blur-sm">
+              <h2 className="text-xl font-serif text-gold mb-4 uppercase tracking-widest flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                History & Logs
+              </h2>
+              
+              <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+                {liveLogs.map((log: any) => (
+                  <div key={log.id} className="bg-black/40 border border-zinc-800 rounded p-3 text-sm">
+                    <div className="flex justify-between text-xs text-parchment/40 mb-1 font-mono">
+                      <span>{log.reported_by} {log.teams ? `(To: ${log.teams.ship_name})` : ''}</span>
+                      <span>{new Date(log.created_at).toLocaleTimeString()}</span>
+                    </div>
+                    <p className={`font-serif leading-relaxed ${log.message.startsWith('[God Message') ? 'text-blue-300' : 'text-parchment/90'}`}>
+                      {log.message}
+                    </p>
+                  </div>
+                ))}
+                {liveLogs.length === 0 && (
+                  <p className="text-parchment/30 text-center italic mt-10 font-serif">No history recorded.</p>
                 )}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
