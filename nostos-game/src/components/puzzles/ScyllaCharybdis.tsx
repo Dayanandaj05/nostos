@@ -21,6 +21,7 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
   const [localInput, setLocalInput] = useState("");
   const [localError, setLocalError] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -41,10 +42,25 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
     commitToPath(levelId, pathKey).then(result => {
       if (result?.path) setCommittedPath(result.path);
       setIsCommitting(false);
+      setTimeLeft(45); // 45 seconds to answer!
     }).catch(() => {
       setIsCommitting(false);
     });
   };
+
+  useEffect(() => {
+    if (timeLeft !== null && timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0) {
+      setLocalError(true);
+      window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: "WRONG_PATH_ANSWER" }));
+      setTimeout(() => {
+        setLocalError(false);
+        setTimeLeft(45); // Reset timer for another attempt
+      }, 1000);
+    }
+  }, [timeLeft]);
 
   const handleLocalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,8 +188,13 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
       {/* Local Puzzle */}
       {committedPath && (
         <div className="w-full max-w-lg bg-ink/50 border-2 border-gold/40 p-8 rounded-xl shadow-2xl backdrop-blur-sm animate-in slide-in-from-bottom-8 duration-700">
-          <h4 className="text-gold font-serif text-xl tracking-widest uppercase text-center border-b border-gold/20 pb-4 mb-6">
-            Trial of {committedPath === 'A' ? 'Scylla' : 'Charybdis'}
+          <h4 className="text-gold font-serif text-xl tracking-widest uppercase text-center border-b border-gold/20 pb-4 mb-6 flex items-center justify-between">
+            <span>Trial of {committedPath === 'A' ? 'Scylla' : 'Charybdis'}</span>
+            {timeLeft !== null && (
+              <span className={`text-2xl font-bold ${timeLeft <= 10 ? 'text-danger animate-pulse' : 'text-gold'}`}>
+                {timeLeft}s
+              </span>
+            )}
           </h4>
           <form onSubmit={handleLocalSubmit} className="space-y-6 flex flex-col items-center">
             <p className="text-parchment/90 font-serif text-center italic text-lg leading-relaxed">

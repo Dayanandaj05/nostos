@@ -38,7 +38,7 @@ export function CattleOfHelios({ data, incorrectCount }: CattleOfHeliosProps) {
   const handleDecoyClick = () => {
     if (penaltyActive) return;
     setPenaltyActive(true);
-    setPenaltyTime(12); // 12 seconds penalty
+    setPenaltyTime(120); // 120 seconds penalty (2 minutes)
     
     // Ghost submission to increment global incorrect counter
     window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: "DECOY_TRIGGERED" }));
