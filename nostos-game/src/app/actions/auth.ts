@@ -17,7 +17,6 @@ async function ensureDeviceToken() {
   if (!cookieStore.has("device_token")) {
     const token = crypto.randomUUID();
     cookieStore.set("device_token", token, {
-      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -89,15 +88,9 @@ export async function loginTeam(prevState: LoginState, formData: FormData): Prom
   const cookieStore = await cookies();
   const deviceToken = cookieStore.get("device_token")?.value;
 
-  // Check if sailor is already logged in on another device or window
-  const isCurrentlyLoggedIn = isUserCurrentlyLoggedIn(team.id, username, deviceToken);
-  console.log(`[auth.ts] isUserCurrentlyLoggedIn = ${isCurrentlyLoggedIn}, deviceToken = ${deviceToken}`);
-  if (isCurrentlyLoggedIn) {
-    return {
-      success: false,
-      error: `Sailor "${username}" is already active on another device or window. Log out on that device to proceed.`
-    };
-  }
+  // We removed the active-session block here so users can seamlessly switch devices.
+  // The new device will overwrite the session map, and the old device will be 
+  // automatically kicked on its next heartbeat due to a session mismatch.
 
   // Generate unique session ID for single-device tracking
   const sessionId = crypto.randomUUID();
