@@ -97,7 +97,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
     const channel = supabase.channel(`crew_chat_${teamId}`, {
       config: {
         presence: {
-          key: token,
+          key: `${token}_${alias}`,
         },
         broadcast: { self: true }
       }
