@@ -469,7 +469,7 @@ function AbsentMemberGate({ memberNames, username, onConfirm }: { memberNames: s
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md text-left space-y-2">
         <p className="text-parchment/60 font-serif text-sm italic border-b border-gold/10 pb-3 mb-4">
-          All registered crew must be listed here. If a sailor cannot join today, mark them absent — the trials will wait only for those present.
+          All registered crew must be listed here. If a sailor could not make it in time, you may proceed by marking them absent.
         </p>
         <ul className="space-y-3">
           {memberNames.map(name => {

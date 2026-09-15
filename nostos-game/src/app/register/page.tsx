@@ -25,7 +25,6 @@ export default function RegisterPage() {
   const [shipName, setShipName] = useState("");
   const [isCheckingShip, setIsCheckingShip] = useState(false);
   const [shipTakenError, setShipTakenError] = useState<string | null>(null);
-  const [showThirdMember, setShowThirdMember] = useState(false);
   const [showFourthMember, setShowFourthMember] = useState(false);
 
   useEffect(() => {
@@ -127,9 +126,6 @@ export default function RegisterPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-2xl text-gold tracking-widest uppercase border-b border-gold/20 pb-2">II. The Crew</h2>
-                <p className="text-parchment/50 font-serif italic text-sm mt-2">
-                  Minimum 2 sailors required. If a 3rd sailor is registered, they must be listed here — they can choose to sit out at game start.
-                </p>
               </div>
 
               <div className="space-y-6">
@@ -142,26 +138,12 @@ export default function RegisterPage() {
                   <Input name="member_2" placeholder="Name" />
                 </div>
 
-                {showThirdMember ? (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <label className="text-parchment/60 uppercase tracking-widest text-sm flex justify-between">
-                      <span>Third Sailor</span>
-                      <button type="button" onClick={() => { setShowThirdMember(false); setShowFourthMember(false); }} className="text-danger/60 hover:text-danger hover:underline">Remove</button>
-                    </label>
-                    <Input name="member_3" placeholder="Name" />
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowThirdMember(true)}
-                    className="text-gold/60 hover:text-gold tracking-widest uppercase text-sm border border-dashed border-gold/30 hover:border-gold/60 p-4 w-full text-center transition-colors rounded-xl bg-gold/5 hover:bg-gold/10"
-                  >
-                    + Add a third sailor
-                  </button>
-                )}
+                <div className="space-y-2">
+                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Third Sailor</label>
+                  <Input name="member_3" placeholder="Name" />
+                </div>
 
-                {showThirdMember && (
-                  showFourthMember ? (
+                {showFourthMember ? (
                     <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
                       <label className="text-parchment/60 uppercase tracking-widest text-sm flex justify-between">
                         <span>Fourth Sailor</span>
@@ -177,8 +159,7 @@ export default function RegisterPage() {
                     >
                       + Add a fourth sailor
                     </button>
-                  )
-                )}
+                  )}
 
                 {state.errors?.member_names && (
                   <p className="text-danger italic text-sm mt-2">{state.errors.member_names}</p>

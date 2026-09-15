@@ -28,7 +28,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
 
   if (!ship_name) errors.ship_name = "A ship must have a name.";
   if (!password || password.trim().length < 1) errors.password = "The password must be at least 1 character.";
-  if (member_names.length < 2) errors.member_names = "A crew requires at least 2 members.";
+  if (member_names.length < 3) errors.member_names = "A crew requires at least 3 members.";
 
   if (Object.keys(errors).length > 0) {
     return { success: false, errors };
