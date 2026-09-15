@@ -28,11 +28,36 @@ export default async function AdminPage() {
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // Fallback to local dev memory state if Supabase fails or is empty in dev
+  let finalTeams = teams || [];
+  let finalLevels = levels || [];
+  let finalLogs = logs || [];
+
+  if (process.env.NODE_ENV !== "production" && finalTeams.length === 0) {
+    const g = globalThis as any;
+    if (g.mockDevProgressState) {
+      finalTeams = Object.keys(g.mockDevProgressState).map(teamId => {
+        const mockTeam = g.mockDevTeams?.find((t: any) => t.id === teamId) || { ship_name: "Dev Team " + teamId.substring(0,4) };
+        return {
+          team_id: teamId,
+          ...g.mockDevProgressState[teamId],
+          teams: mockTeam
+        };
+      });
+    }
+  }
+
+  // Fallback levels if empty
+  if (process.env.NODE_ENV !== "production" && finalLevels.length === 0) {
+    const { SEED_LEVELS } = await import("@/lib/mockData");
+    finalLevels = SEED_LEVELS.map(l => ({ id: l.id, level_number: l.level_number, is_locked: l.is_locked }));
+  }
+
   return (
     <AdminClient 
-      teams={teams || []} 
-      levels={levels || []} 
-      logs={logs || []} 
+      teams={finalTeams} 
+      levels={finalLevels} 
+      logs={finalLogs} 
       currentUsername={session.username} 
     />
   );

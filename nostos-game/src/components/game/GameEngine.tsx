@@ -350,6 +350,7 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
         )}
 
         <Button 
+          id="oracle-submit-btn"
           type="submit" 
           className="w-full py-4 text-xl" 
           disabled={isPendingForm}
