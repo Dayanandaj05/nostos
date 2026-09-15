@@ -18,9 +18,8 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
     return { success: false, error: "Authentication lost. Please log in again." };
   }
 
-  if (session.id && session.username && session.sessionId && !isSessionActive(session.id, session.username, session.sessionId)) {
-    return { success: false, error: "Your session has been logged in on another device or has expired." };
-  }
+  // The secure JWT cookie already verifies their identity. We remove the aggressive memory-based 
+  // 'isSessionActive' check because Vercel serverless freezing causes false positives.
 
   const teamId = session.id;
   let submittedAnswer = formData.get("answer")?.toString();
