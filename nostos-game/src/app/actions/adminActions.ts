@@ -86,6 +86,58 @@ export async function sendGodMessage(teamId: string, message: string) {
   return { success: true };
 }
 
+export async function sendGlobalBroadcast(message: string) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Get all teams
+  const { data: teams } = await supabase.from("teams").select("id");
+  if (!teams || teams.length === 0) return { success: true };
+
+  const messages = teams.map(t => ({ team_id: t.id, message: `[GLOBAL] ${message}` }));
+
+  const { error } = await supabase.from("god_messages").insert(messages);
+  
+  if (error) return { success: false, error: "Failed to broadcast message." };
+
+  await supabase
+    .from("incident_logs")
+    .insert([{
+      message: `[Global Broadcast]: ${message}`,
+      reported_by: session.username || "Olympus"
+    }]);
+
+  return { success: true };
+}
+
+export async function forgiveTeamMistake(teamId: string, currentMistakes: number) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (currentMistakes <= 0) return { success: false, error: "Mistakes already 0." };
+
+  const { error } = await supabase
+    .from("progress")
+    .update({ incorrect_count: currentMistakes - 1 })
+    .eq("team_id", teamId);
+
+  if (error) return { success: false, error: "Failed to forgive mistake." };
+
+  await supabase
+    .from("incident_logs")
+    .insert([{
+      message: `[Mistake Forgiven] Decremented mistake count for team.`,
+      reported_by: session.username || "Olympus",
+      team_id: teamId
+    }]);
+
+  return { success: true };
+}
+
 export async function getLiveAdminData() {
   const session = await getSession();
   if (!session || session.role !== "admin") {

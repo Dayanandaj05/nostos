@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getLiveAdminData, sendGodMessage } from "@/app/actions/adminActions";
-import { AlertCircle, Download, MessageSquare, Send } from "lucide-react";
+import { getLiveAdminData, sendGodMessage, sendGlobalBroadcast, forgiveTeamMistake } from "@/app/actions/adminActions";
+import { AlertCircle, Download, MessageSquare, Send, Megaphone, MinusCircle } from "lucide-react";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 
 export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUsername }: any) {
@@ -11,6 +11,10 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [godMessage, setGodMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  const [isGlobalModalOpen, setIsGlobalModalOpen] = useState(false);
+  const [globalMessage, setGlobalMessage] = useState("");
+  const [isSendingGlobal, setIsSendingGlobal] = useState(false);
 
   // Poll for live progress every 10 seconds
   useEffect(() => {
@@ -39,6 +43,29 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
     setSelectedTeam(null);
     setIsSending(false);
     alert("Message sent to " + selectedTeam.teams.ship_name);
+  };
+
+  const handleSendGlobal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!globalMessage.trim() || isSendingGlobal) return;
+    if (!confirm("Are you sure you want to broadcast this to ALL teams?")) return;
+    setIsSendingGlobal(true);
+    await sendGlobalBroadcast(globalMessage.trim());
+    setGlobalMessage("");
+    setIsGlobalModalOpen(false);
+    setIsSendingGlobal(false);
+    alert("Broadcast sent to all teams!");
+  };
+
+  const handleForgiveMistake = async (teamId: string, currentMistakes: number) => {
+    if (currentMistakes <= 0) return;
+    if (!confirm("Are you sure you want to forgive 1 mistake for this team?")) return;
+    await forgiveTeamMistake(teamId, currentMistakes);
+    alert("Mistake forgiven!");
+    // Optimistic update
+    setLiveTeams((prev: any[]) => prev.map(t => 
+      t.team_id === teamId ? { ...t, incorrect_count: t.incorrect_count - 1 } : t
+    ));
   };
 
   const exportCSV = () => {
@@ -93,13 +120,22 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
             <h1 className="text-4xl font-serif text-gold uppercase tracking-widest">Olympus Oversight</h1>
             <p className="text-parchment/60 font-mono text-sm mt-2">Live tracking grid • Polling every 10s</p>
           </div>
-          <button 
-            onClick={exportCSV}
-            className="flex items-center space-x-2 bg-gold/10 hover:bg-gold/20 border border-gold/50 text-gold px-4 py-2 rounded transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span className="uppercase tracking-widest text-sm">Export Rankings CSV</span>
-          </button>
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => setIsGlobalModalOpen(true)}
+              className="flex items-center space-x-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/50 text-blue-400 px-4 py-2 rounded transition-colors"
+            >
+              <Megaphone className="w-4 h-4" />
+              <span className="uppercase tracking-widest text-sm">Global Broadcast</span>
+            </button>
+            <button 
+              onClick={exportCSV}
+              className="flex items-center space-x-2 bg-gold/10 hover:bg-gold/20 border border-gold/50 text-gold px-4 py-2 rounded transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              <span className="uppercase tracking-widest text-sm">Export Rankings CSV</span>
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -136,7 +172,20 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
                             )}
                           </td>
                           <td className="py-4 px-4 text-lg">{t.current_level > 10 ? 'FINISHED' : t.current_level}</td>
-                          <td className="py-4 px-4 text-danger text-lg">{t.incorrect_count || 0}</td>
+                          <td className="py-4 px-4 text-lg">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-danger">{t.incorrect_count || 0}</span>
+                              {(t.incorrect_count || 0) > 0 && (
+                                <button 
+                                  onClick={() => handleForgiveMistake(t.team_id, t.incorrect_count)}
+                                  title="Forgive 1 Mistake"
+                                  className="text-parchment/40 hover:text-green-400 transition-colors"
+                                >
+                                  <MinusCircle className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
                           <td className="py-4 px-4 text-center">
                             <button
                               onClick={() => setSelectedTeam(t)}
@@ -220,6 +269,54 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
                     <>
                       <span>Transmit</span>
                       <Send className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Global Broadcast Modal */}
+      {isGlobalModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-ink border-2 border-red-500/50 rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 className="text-2xl font-serif text-red-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+              <Megaphone className="w-6 h-6" />
+              Global Broadcast
+            </h3>
+            <p className="text-sm text-parchment/70 mb-6 font-mono">
+              Sending a divine hint to: <strong className="text-danger">EVERY ACTIVE SHIP</strong>
+            </p>
+            
+            <form onSubmit={handleSendGlobal} className="space-y-4">
+              <textarea
+                value={globalMessage}
+                onChange={e => setGlobalMessage(e.target.value)}
+                placeholder="Type your global announcement here..."
+                className="w-full h-32 bg-black/50 border border-red-500/30 focus:border-red-400/80 rounded p-3 text-parchment outline-none font-serif resize-none"
+                disabled={isSendingGlobal}
+                required
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsGlobalModalOpen(false); setGlobalMessage(""); }}
+                  className="px-4 py-2 border border-zinc-700 hover:bg-zinc-800 text-parchment rounded text-sm tracking-wide transition-colors"
+                  disabled={isSendingGlobal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingGlobal || !globalMessage.trim()}
+                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 rounded text-sm tracking-wide uppercase font-bold flex items-center space-x-2 disabled:opacity-50 transition-colors"
+                >
+                  {isSendingGlobal ? <span>Broadcasting...</span> : (
+                    <>
+                      <span>Broadcast</span>
+                      <Megaphone className="w-4 h-4" />
                     </>
                   )}
                 </button>
