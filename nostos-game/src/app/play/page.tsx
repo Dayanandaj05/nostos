@@ -21,15 +21,8 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
     );
   }
 
-  // Validate single device active session
-  if (session.username && session.sessionId && !isSessionActive(session.id, session.username, session.sessionId)) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-ink text-parchment p-6 text-center">
-        <p className="text-danger text-xl font-serif mb-4">Your session has been logged in on another device.</p>
-        <Link href="/login" className="text-gold underline font-serif">Log in again to reclaim your vessel.</Link>
-      </div>
-    );
-  }
+  // Validate single device active session - Removed due to Vercel false positives.
+  // The JWT token is secure enough.
 
   const teamId = session.id;
 
