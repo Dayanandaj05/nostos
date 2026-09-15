@@ -234,18 +234,8 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     e.preventDefault();
     const input = document.getElementById('oracle-form')?.querySelector('input[name="answer"]') as HTMLInputElement;
     if (input) {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-      const finalWord = finalAnswer.trim() || "VICTORY";
-      nativeInputValueSetter?.call(input, finalWord);
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      const form = document.getElementById('oracle-form') as HTMLFormElement;
-      if (form) {
-        if (typeof form.requestSubmit === 'function') {
-          form.requestSubmit();
-        } else {
-          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-        }
-      }
+      input.value = finalAnswer.trim() || "VICTORY";
+      document.getElementById('oracle-submit-btn')?.click();
     }
   };
 
@@ -980,9 +970,9 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
         <div className="w-full mt-4 p-4 border border-blue-400/30 bg-blue-950/40 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-1000 flex items-start space-x-3 text-left">
           <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5 animate-pulse" />
           <p className="text-blue-200/80 font-serif text-sm italic leading-relaxed">
-            {phase === 1 && "The faithful queen delays her suitors by unraveling her work in the dark... tap the woven threads repeatedly to unweave them and reveal her name before she reweaves them."}
-            {phase === 2 && "The first ring is 10. The second ring requires division. The third ring requires multiplication."}
-            {phase === 3 && "The cross-winds are too strong for any mortal. Perhaps you should extinguish the flames in the hall to find your focus."}
+            {phase === 1 && "The faithful queen delays her suitors by unraveling her work in the dark... What is woven can be unwoven with a swift touch."}
+            {phase === 2 && "Three rings bind the gate. The first is a decade. The second divides. The third multiplies."}
+            {phase === 3 && "The cross-winds are too strong for any mortal. The flames in the hall cast a distracting light... finding your focus requires darkness."}
           </p>
         </div>
       )}
