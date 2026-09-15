@@ -129,28 +129,53 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">First Sailor (Captain)</label>
-                  <Input name="member_1" placeholder="Name" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Second Sailor</label>
-                  <Input name="member_2" placeholder="Name" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-parchment/60 uppercase tracking-widest text-sm block">First Sailor (Captain)</label>
+                    <Input name="member_1" placeholder="Name" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
+                    <Input name="phone_1" type="tel" placeholder="+1 234 567 8900" />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-parchment/60 uppercase tracking-widest text-sm block">Third Sailor</label>
-                  <Input name="member_3" placeholder="Name" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-parchment/60 uppercase tracking-widest text-sm block">Second Sailor</label>
+                    <Input name="member_2" placeholder="Name" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
+                    <Input name="phone_2" type="tel" placeholder="+1 234 567 8900" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-parchment/60 uppercase tracking-widest text-sm block">Third Sailor</label>
+                    <Input name="member_3" placeholder="Name" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
+                    <Input name="phone_3" type="tel" placeholder="+1 234 567 8900" />
+                  </div>
                 </div>
 
                 {showFourthMember ? (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="space-y-2">
                       <label className="text-parchment/60 uppercase tracking-widest text-sm flex justify-between">
                         <span>Fourth Sailor</span>
                         <button type="button" onClick={() => setShowFourthMember(false)} className="text-danger/60 hover:text-danger hover:underline">Remove</button>
                       </label>
                       <Input name="member_4" placeholder="Name" />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-parchment/60 uppercase tracking-widest text-sm block">Mobile Number</label>
+                      <Input name="phone_4" type="tel" placeholder="+1 234 567 8900" />
+                    </div>
+                  </div>
                   ) : (
                     <button
                       type="button"

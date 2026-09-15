@@ -17,14 +17,23 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
   const ship_name = formData.get("ship_name")?.toString().trim();
   const password = formData.get("password")?.toString();
 
-  // Build member_names: slot 1 is always the captain
+  // Build member_names and member_phones: slot 1 is always the captain
   const member_names: string[] = [];
+  const member_phones: string[] = [];
+  const errors: RegisterState["errors"] = {};
+
   for (let i = 1; i <= 4; i++) {
     const member = formData.get(`member_${i}`)?.toString().trim();
-    if (member) member_names.push(member);
+    const phone = formData.get(`phone_${i}`)?.toString().trim();
+    
+    if (member) {
+      if (!phone) errors.general = `Please provide a mobile number for ${member}.`;
+      member_names.push(member);
+      member_phones.push(phone || "");
+    }
   }
 
-  const errors: RegisterState["errors"] = {};
+
 
   if (!ship_name) errors.ship_name = "A ship must have a name.";
   if (!password || password.trim().length < 1) errors.password = "The password must be at least 1 character.";
@@ -52,7 +61,14 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
 
     const { data: newTeam, error: insertError } = await supabase
       .from("teams")
-      .insert([{ ship_name, password_hash, member_names }])
+      .insert([{ 
+        ship_name, 
+        password_hash, 
+        member_names,
+        member_phones,
+        captain_name: member_names[0],
+        captain_phone: member_phones[0]
+      }])
       .select("id")
       .single();
 
@@ -83,7 +99,7 @@ export async function registerTeam(prevState: RegisterState, formData: FormData)
       const password_hash = await bcrypt.hash(password!, salt);
       const mockId = crypto.randomUUID();
 
-      globalForDev.mockDevTeams.push({ id: mockId, ship_name, password_hash, member_names });
+      globalForDev.mockDevTeams.push({ id: mockId, ship_name, password_hash, member_names, member_phones });
       globalForDev.mockDevProgress[mockId] = { current_level: 1, incorrect_count: 0, aid_tokens: 3 };
       
       return { success: true };
