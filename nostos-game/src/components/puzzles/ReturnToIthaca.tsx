@@ -15,7 +15,7 @@ const LOCK_VARIATIONS = [
   { id: 1, r1: { eq: "(4 × 3) - 2", ans: 10 }, r2: { eq: "(18 - 6) ÷ 12", ans: 1 }, r3: { eq: "(7 × 3) - 9", ans: 12 } },
   { id: 2, r1: { eq: "(5 × 4) - 5", ans: 15 }, r2: { eq: "(24 ÷ 3) + 1", ans: 9 }, r3: { eq: "(8 × 2) - 4", ans: 12 } },
   { id: 3, r1: { eq: "3³ - 12", ans: 15 }, r2: { eq: "(100 ÷ 10) - 2", ans: 8 }, r3: { eq: "(6 × 4) - 20", ans: 4 } },
-  { id: 4, r1: { eq: "(6 × 3) - 4", ans: 14 }, r2: { eq: "(36 ÷ 6) + 3", ans: 9 }, r3: { eq: "5² - 14", ans: 11 } }
+  { id: 4, r1: { eq: "(9 × 3) - 7", ans: 20 }, r2: { eq: "(36 ÷ 6) + 3", ans: 9 }, r3: { eq: "5² - 14", ans: 11 } }
 ];
 
 export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
@@ -775,14 +775,14 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
                 {lockVariation.r1.eq}
               </span>
               <div className="flex items-center space-x-2">
-                <button onClick={() => setRing1(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
+                <button onClick={() => setRing1(r => (r - 1 + 24) % 24)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gold bg-ink flex items-center justify-center shadow-[0_0_20px_rgba(201,162,75,0.3)]">
                   <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/40 animate-[spin_60s_linear_infinite]" />
-                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring1 * 22.5}deg)` }}>
-                    <div style={{ transform: `rotate(-${ring1 * 22.5}deg)` }}>{ring1}</div>
+                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring1 * 15}deg)` }}>
+                    <div style={{ transform: `rotate(-${ring1 * 15}deg)` }}>{ring1}</div>
                   </span>
                 </div>
-                <button onClick={() => setRing1(r => (r + 1) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
+                <button onClick={() => setRing1(r => (r + 1) % 24)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
               </div>
             </div>
 
@@ -792,14 +792,14 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
                 {lockVariation.r2.eq}
               </span>
               <div className="flex items-center space-x-2">
-                <button onClick={() => setRing2(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
+                <button onClick={() => setRing2(r => (r - 1 + 24) % 24)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gold bg-ink flex items-center justify-center shadow-[0_0_20px_rgba(201,162,75,0.3)]">
                   <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/40 animate-[spin_40s_linear_infinite_reverse]" />
-                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring2 * 22.5}deg)` }}>
-                    <div style={{ transform: `rotate(-${ring2 * 22.5}deg)` }}>{ring2}</div>
+                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring2 * 15}deg)` }}>
+                    <div style={{ transform: `rotate(-${ring2 * 15}deg)` }}>{ring2}</div>
                   </span>
                 </div>
-                <button onClick={() => setRing2(r => (r + 1) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
+                <button onClick={() => setRing2(r => (r + 1) % 24)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
               </div>
             </div>
 
@@ -809,14 +809,14 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
                 {lockVariation.r3.eq}
               </span>
               <div className="flex items-center space-x-2">
-                <button onClick={() => setRing3(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
+                <button onClick={() => setRing3(r => (r - 1 + 24) % 24)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gold bg-ink flex items-center justify-center shadow-[0_0_20px_rgba(201,162,75,0.3)]">
                   <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/40 animate-[spin_50s_linear_infinite]" />
-                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring3 * 22.5}deg)` }}>
-                    <div style={{ transform: `rotate(-${ring3 * 22.5}deg)` }}>{ring3}</div>
+                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring3 * 15}deg)` }}>
+                    <div style={{ transform: `rotate(-${ring3 * 15}deg)` }}>{ring3}</div>
                   </span>
                 </div>
-                <button onClick={() => setRing3(r => (r + 1) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
+                <button onClick={() => setRing3(r => (r + 1) % 24)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
               </div>
             </div>
           </div>
