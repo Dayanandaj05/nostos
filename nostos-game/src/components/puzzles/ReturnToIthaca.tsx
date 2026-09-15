@@ -363,6 +363,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
         speedMult = 3.5;
         oscAmp = 65;
         windX = -0.28;
+        targetY = 270 + Math.sin(time * 2.2) * 50; // Add moving target to crosswind round
       } else if (currentHitCount >= 2) {
         speedMult = 5.2;
         oscAmp = 85;
