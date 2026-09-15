@@ -29,7 +29,7 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
   const triggerOracleSubmit = () => {
     setDoorOpen(true);
     setTimeout(() => {
-      const finalAnswer = riddles[0]?.a || "ECHO";
+      const finalAnswer = riddles[2]?.a || "NOBODY";
       window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: finalAnswer }));
     }, 1400);
   };
