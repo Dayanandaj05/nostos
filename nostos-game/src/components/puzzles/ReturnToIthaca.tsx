@@ -14,9 +14,53 @@ interface ReturnToIthacaProps {
 export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   const [phase, setPhase] = useState<1 | 2 | 3 | 4>(1); // Phase 1: Tapestry, 2: Odyssey Lock, 3: 2D Bow & Arrow, 4: Victory
   
-  // Phase 1: Penelope Tapestry
-  const [riddleInput, setRiddleInput] = useState("");
-  const [riddleError, setRiddleError] = useState(false);
+  // Hints System
+  const [timeInPhase, setTimeInPhase] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    setTimeInPhase(0);
+    setShowHint(false);
+    const interval = setInterval(() => {
+      setTimeInPhase(prev => {
+        const next = prev + 1;
+        if (next >= 120) setShowHint(true);
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // Phase 1: Penelope Tapestry Overhaul
+  const [threads, setThreads] = useState<boolean[]>(Array(16).fill(false)); // false = woven, true = unwoven
+  
+  useEffect(() => {
+    if (phase !== 1) return;
+    const interval = setInterval(() => {
+      setThreads(prev => {
+        const unwovenIndices = prev.map((t, i) => t ? i : -1).filter(i => i !== -1);
+        if (unwovenIndices.length > 0 && unwovenIndices.length < 16) {
+          const toReweave = unwovenIndices[Math.floor(Math.random() * unwovenIndices.length)];
+          const next = [...prev];
+          next[toReweave] = false; // Penelope re-weaves!
+          return next;
+        }
+        return prev;
+      });
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  const handleThreadClick = (index: number) => {
+    setThreads(prev => {
+      const next = [...prev];
+      next[index] = true;
+      if (next.every(t => t === true)) {
+        setTimeout(() => setPhase(2), 2000);
+      }
+      return next;
+    });
+  };
 
   // Phase 2: Odyssey Lore Lock (Years=10, Cyclops=1, Axes=12)
   const [ring1, setRing1] = useState(0);
@@ -173,17 +217,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     setTimeout(() => setHitFeedback(null), 1000);
   };
 
-  // Phase 1 Submit
-  const handleRiddleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = riddleInput.trim().toUpperCase();
-    if (val === "PENELOPE" || val === "TAPESTRY" || val === "SECRET" || val === "ITHACA") {
-      setPhase(2);
-      setRiddleError(false);
-    } else {
-      setRiddleError(true);
-    }
-  };
+  // (Phase 1 auto-advances now)
 
   // Phase 2 Lock Submit (Ring 1 = (4x3)-2 = 10, Ring 2 = (18-6)/12 = 1, Ring 3 = (7x3)-9 = 12)
   const handleLockSubmit = () => {
@@ -681,24 +715,40 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
           </div>
           
           <p className="text-parchment/90 font-serif text-center italic text-base md:text-lg mb-5 leading-relaxed">
-            "The faithful queen unwove her shroud each night for 20 years to delay the suitors while awaiting her lost king. Speak her name to enter."
+            "The faithful queen unwinds her shroud each night... click the woven threads to unweave them and reveal her name."
           </p>
 
-          <form onSubmit={handleRiddleSubmit} className="w-full space-y-4">
-            <input 
-              type="text" 
-              value={riddleInput}
-              onChange={e => setRiddleInput(e.target.value)}
-              placeholder="Name of the Queen..."
-              className="w-full bg-ink/80 border border-gold/40 focus:border-gold px-4 py-3 rounded-xl text-parchment font-serif text-center text-lg uppercase tracking-widest outline-none"
-            />
-            {riddleError && (
-              <p className="text-danger text-center text-xs font-serif italic">The tapestry unravels... Recall the queen's name from earlier trials.</p>
-            )}
-            <button type="submit" className="w-full py-3 bg-gold hover:bg-gold-light text-ink font-serif font-bold tracking-widest uppercase rounded-xl shadow-lg transition-all text-sm md:text-base">
-              Pass First Gate →
-            </button>
-          </form>
+          <div className="relative w-full max-w-sm aspect-square bg-black/50 border-4 border-gold/30 rounded-xl overflow-hidden p-2 grid grid-cols-4 grid-rows-4 gap-1">
+            {/* The hidden word */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+              <span className="text-4xl md:text-5xl font-serif font-bold text-gold tracking-[0.2em] opacity-80 drop-shadow-[0_0_15px_rgba(201,162,75,0.8)]">
+                PENELOPE
+              </span>
+            </div>
+            
+            {/* The threads overlay */}
+            {threads.map((isUnwoven, idx) => (
+              <div 
+                key={idx}
+                onClick={() => !isUnwoven && handleThreadClick(idx)}
+                className={`relative z-10 transition-all duration-500 cursor-pointer rounded-sm ${
+                  isUnwoven 
+                    ? "opacity-0 scale-90 pointer-events-none" 
+                    : "opacity-100 scale-100 bg-[repeating-linear-gradient(45deg,#1e293b,#1e293b_10px,#0f172a_10px,#0f172a_20px)] border border-slate-700 hover:border-gold/50 shadow-inner"
+                }`}
+              >
+                {!isUnwoven && (
+                  <div className="absolute inset-0 bg-gold/5 opacity-0 hover:opacity-100 transition-opacity" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {threads.every(t => t) && (
+            <p className="mt-6 text-gold font-serif font-bold text-lg animate-pulse">
+              The tapestry is unwoven! Proceeding...
+            </p>
+          )}
         </div>
       )}
 
@@ -707,59 +757,71 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
         <div className="w-full bg-ink/70 border-2 border-gold/40 p-5 md:p-6 rounded-2xl shadow-2xl backdrop-blur-sm flex flex-col items-center animate-in fade-in duration-500">
           <div className="flex items-center space-x-3 text-gold mb-4 border-b border-gold/20 pb-3 w-full justify-center">
             <span className="text-xs uppercase tracking-widest bg-gold/20 px-2.5 py-1 rounded border border-gold/40 font-bold">Phase 2 of 3</span>
-            <h4 className="font-serif text-lg md:text-xl tracking-widest uppercase font-bold">Odyssey Lore Lock</h4>
+            <h4 className="font-serif text-lg md:text-xl tracking-widest uppercase font-bold">The Golden Dials</h4>
           </div>
 
-          <p className="text-parchment/90 font-serif text-center italic text-sm md:text-base font-semibold mb-5 leading-relaxed">
-            Solve the mathematical equations to find the target number for each ring:
+          <p className="text-parchment/90 font-serif text-center italic text-sm md:text-base font-semibold mb-6 leading-relaxed">
+            Rotate the heavy dials to match the lock's equations:
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 w-full">
-            {/* Ring 1 */}
-            <div className="flex flex-col items-center space-y-2.5 bg-black/40 border border-gold/30 p-3.5 rounded-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 w-full place-items-center">
+            {/* Dial 1 */}
+            <div className="flex flex-col items-center space-y-3">
               <span className="text-gold font-serif text-xs md:text-sm font-bold tracking-wider bg-gold/15 border border-gold/40 px-3 py-1 rounded-lg text-center">
                 (4 × 3) - 2
               </span>
-              <button 
-                onClick={() => setRing1((ring1 + 1) % 15)}
-                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-gold bg-ink flex items-center justify-center text-3xl font-serif text-gold font-bold shadow-[0_0_15px_rgba(201,162,75,0.4)] hover:scale-105 transition-transform"
-              >
-                {ring1}
-              </button>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => setRing1(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
+                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gold bg-ink flex items-center justify-center shadow-[0_0_20px_rgba(201,162,75,0.3)]">
+                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/40 animate-[spin_60s_linear_infinite]" />
+                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring1 * 22.5}deg)` }}>
+                    <div style={{ transform: `rotate(-${ring1 * 22.5}deg)` }}>{ring1}</div>
+                  </span>
+                </div>
+                <button onClick={() => setRing1(r => (r + 1) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
+              </div>
             </div>
 
-            {/* Ring 2 */}
-            <div className="flex flex-col items-center space-y-2.5 bg-black/40 border border-gold/30 p-3.5 rounded-xl">
+            {/* Dial 2 */}
+            <div className="flex flex-col items-center space-y-3">
               <span className="text-gold font-serif text-xs md:text-sm font-bold tracking-wider bg-gold/15 border border-gold/40 px-3 py-1 rounded-lg text-center">
                 (18 - 6) ÷ 12
               </span>
-              <button 
-                onClick={() => setRing2((ring2 + 1) % 10)}
-                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-gold bg-ink flex items-center justify-center text-3xl font-serif text-gold font-bold shadow-[0_0_15px_rgba(201,162,75,0.4)] hover:scale-105 transition-transform"
-              >
-                {ring2}
-              </button>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => setRing2(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
+                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gold bg-ink flex items-center justify-center shadow-[0_0_20px_rgba(201,162,75,0.3)]">
+                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/40 animate-[spin_40s_linear_infinite_reverse]" />
+                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring2 * 22.5}deg)` }}>
+                    <div style={{ transform: `rotate(-${ring2 * 22.5}deg)` }}>{ring2}</div>
+                  </span>
+                </div>
+                <button onClick={() => setRing2(r => (r + 1) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
+              </div>
             </div>
 
-            {/* Ring 3 */}
-            <div className="flex flex-col items-center space-y-2.5 bg-black/40 border border-gold/30 p-3.5 rounded-xl">
+            {/* Dial 3 */}
+            <div className="flex flex-col items-center space-y-3">
               <span className="text-gold font-serif text-xs md:text-sm font-bold tracking-wider bg-gold/15 border border-gold/40 px-3 py-1 rounded-lg text-center">
                 (7 × 3) - 9
               </span>
-              <button 
-                onClick={() => setRing3((ring3 + 1) % 15)}
-                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-gold bg-ink flex items-center justify-center text-3xl font-serif text-gold font-bold shadow-[0_0_15px_rgba(201,162,75,0.4)] hover:scale-105 transition-transform"
-              >
-                {ring3}
-              </button>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => setRing3(r => (r - 1 + 16) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">‹</button>
+                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gold bg-ink flex items-center justify-center shadow-[0_0_20px_rgba(201,162,75,0.3)]">
+                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/40 animate-[spin_50s_linear_infinite]" />
+                  <span className="text-3xl font-serif text-gold font-bold drop-shadow-md transition-transform duration-300" style={{ transform: `rotate(${ring3 * 22.5}deg)` }}>
+                    <div style={{ transform: `rotate(-${ring3 * 22.5}deg)` }}>{ring3}</div>
+                  </span>
+                </div>
+                <button onClick={() => setRing3(r => (r + 1) % 16)} className="text-gold/60 hover:text-gold p-1 text-2xl font-bold transition-colors">›</button>
+              </div>
             </div>
           </div>
 
           <button 
             onClick={handleLockSubmit}
-            className="w-full py-3.5 bg-gold hover:bg-gold-light text-ink font-serif font-bold tracking-widest uppercase rounded-xl shadow-lg transition-all text-sm md:text-base"
+            className="w-full py-3.5 bg-gold hover:bg-gold-light text-ink font-serif font-bold tracking-widest uppercase rounded-xl shadow-lg transition-all text-sm md:text-base hover:scale-[1.01]"
           >
-            Unlock Palace Gates →
+            Attempt to Unlock Gates →
           </button>
         </div>
       )}
@@ -907,6 +969,18 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
               Submit Answer: ITHACA →
             </button>
           </form>
+        </div>
+      )}
+
+      {/* 2-Minute Subtle Hint System */}
+      {showHint && (
+        <div className="w-full mt-4 p-4 border border-blue-400/30 bg-blue-950/40 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-1000 flex items-start space-x-3 text-left">
+          <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5 animate-pulse" />
+          <p className="text-blue-200/80 font-serif text-sm italic leading-relaxed">
+            {phase === 1 && "The faithful queen delays her suitors by unraveling her work in the dark... tap the woven threads repeatedly to unweave them and reveal her name before she reweaves them."}
+            {phase === 2 && "The first ring is 10. The second ring requires division. The third ring requires multiplication."}
+            {phase === 3 && "The cross-winds are too strong for any mortal. Perhaps you should extinguish the flames in the hall to find your focus."}
+          </p>
         </div>
       )}
 
