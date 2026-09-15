@@ -262,9 +262,25 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
       </Card>
 
       <div className="space-y-4 mt-8">
-        <p className="text-gold/80 font-serif italic animate-pulse text-lg">
-          Waiting for all registered crew members to complete the trial...
-        </p>
+        {isEveryoneDone ? (
+          <div className="flex flex-col items-center space-y-4">
+            <p className="text-gold font-serif text-xl animate-pulse">All crew members are ready.</p>
+            <button
+              onClick={() => startTransition(async () => {
+                await confirmAdvance(levelNumber);
+                window.location.reload(); // Hard fallback
+              })}
+              disabled={isPending}
+              className="px-8 py-3 bg-gold/20 hover:bg-gold/40 border border-gold rounded text-gold font-bold tracking-widest uppercase transition-all"
+            >
+              {isPending ? "Setting Sail..." : "Set Sail for the Next Trial"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-gold/80 font-serif italic animate-pulse text-lg">
+            Waiting for the rest of the crew...
+          </p>
+        )}
       </div>
     </div>
   );
