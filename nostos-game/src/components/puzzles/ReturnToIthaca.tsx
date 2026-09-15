@@ -189,11 +189,24 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     e.preventDefault();
     const oracleForm = document.getElementById('oracle-form') as HTMLFormElement;
     const input = oracleForm?.querySelector('input[name="answer"]') as HTMLInputElement;
+    
+    // Set up React's artificial setter properly
     if (input) {
-      input.value = finalAnswer.trim() || "ITHACA";
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+      const finalWord = finalAnswer.trim() || "VICTORY";
+      if (nativeInputValueSetter) {
+        nativeInputValueSetter.call(input, finalWord);
+      } else {
+        input.value = finalWord;
+      }
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
     }
+    
     if (oracleForm && typeof oracleForm.requestSubmit === "function") {
       oracleForm.requestSubmit();
+    } else if (oracleForm) {
+      (oracleForm as any).submit();
     }
   };
 
@@ -274,25 +287,26 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
       ctx.strokeRect(860, 0, 30, height);
 
       // 2. Round Difficulty Parameters
-      let speedMult = 0.8;
-      let oscAmp = 25;
-      let windX = 0;
+      let speedMult = 1.8;
+      let oscAmp = 45;
+      let windX = -0.15;
       let targetY = 270;
 
       if (currentHitCount === 1) {
-        speedMult = 1.2;
-        oscAmp = 32;
-        windX = -0.08;
+        speedMult = 3.5;
+        oscAmp = 65;
+        windX = -0.28;
       } else if (currentHitCount >= 2) {
-        speedMult = 1.5;
-        oscAmp = 40;
-        windX = -0.12;
-        targetY = 270 + Math.sin(time * 1.6) * 55; // Smooth 60fps moving target
+        speedMult = 5.2;
+        oscAmp = 85;
+        windX = -0.45;
+        targetY = 270 + Math.sin(time * 3.8) * 90; // Extremely fast moving target
       }
 
       // 3. 12 Moving Axe Heads
       AXE_X_POSITIONS.forEach((x, idx) => {
-        const oscY = 250 + Math.sin(time * speedMult * 2 + idx * 0.4) * oscAmp;
+        // High chaos oscillation for each individual axe
+        const oscY = 250 + Math.sin(time * speedMult * 2.5 + idx * 1.8) * oscAmp;
 
         // Wooden Handle
         ctx.strokeStyle = '#78350f';
