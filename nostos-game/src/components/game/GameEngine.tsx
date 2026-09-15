@@ -280,13 +280,10 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
   React.useEffect(() => {
     const handleCustomSubmit = (e: any) => {
       const answer = e.detail;
-      // Must use the existing form to preserve Next.js action tokens
       const formElement = formRef.current;
       const fd = formElement ? new FormData(formElement) : new FormData();
       fd.set("answer", answer);
-      React.startTransition(() => {
-        formAction(fd);
-      });
+      formAction(fd);
     };
     window.addEventListener("nostos-oracle-submit", handleCustomSubmit);
     return () => window.removeEventListener("nostos-oracle-submit", handleCustomSubmit);
