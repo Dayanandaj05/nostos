@@ -103,37 +103,25 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
 
   // 2. Check for game completion
   if (currentLevelNumber > 10) {
-    let rank = 1;
-    let finalTimeStr = "12m 45s";
+    let finalTimeStr = "Voyage Complete";
 
     try {
-      const { data: allCompleted } = await supabase
+      const { data: myData } = await supabase
         .from("progress")
-        .select("team_id, first_login_at, completed_at, incorrect_count")
-        .not("completed_at", "is", null);
+        .select("first_login_at, completed_at")
+        .eq("team_id", teamId)
+        .single();
       
-      if (allCompleted) {
-        const sorted = allCompleted.map(t => {
-          const start = new Date(t.first_login_at || 0).getTime();
-          const end = new Date(t.completed_at || 0).getTime();
-          const duration = end - start;
-          return { ...t, duration };
-        }).sort((a, b) => {
-          if (a.duration === b.duration) return a.incorrect_count - b.incorrect_count;
-          return a.duration - b.duration;
-        });
-
-        const myIndex = sorted.findIndex(t => t.team_id === teamId);
-        if (myIndex !== -1) {
-          rank = myIndex + 1;
-          const ms = sorted[myIndex].duration;
-          const minutes = Math.floor(ms / 60000);
-          const seconds = Math.floor((ms % 60000) / 1000);
-          finalTimeStr = `${minutes}m ${seconds}s`;
-        }
+      if (myData && myData.first_login_at && myData.completed_at) {
+        const start = new Date(myData.first_login_at).getTime();
+        const end = new Date(myData.completed_at).getTime();
+        const ms = end - start;
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        finalTimeStr = `${minutes}m ${seconds}s`;
       }
     } catch (err) {
-      console.warn("Unable to fetch leaderboard stats:", err);
+      console.warn("Unable to fetch completion time:", err);
     }
 
     return (
@@ -150,21 +138,11 @@ export default async function PlayPage({ searchParams }: { searchParams?: Promis
              <h1 className="text-4xl md:text-7xl font-serif text-gold tracking-widest uppercase mb-4 drop-shadow-[0_0_20px_rgba(201,162,75,0.8)]">Home at Last</h1>
              <h2 className="text-2xl md:text-4xl font-serif text-parchment/90 tracking-widest uppercase mb-12">The {session.ship_name} has arrived</h2>
              
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 w-full max-w-4xl bg-[#0B121E]/90 border border-gold/30 p-8 rounded-xl backdrop-blur-md">
+             <div className="flex flex-col items-center w-full max-w-sm bg-[#0B121E]/90 border border-gold/30 p-8 rounded-xl backdrop-blur-md shadow-[0_0_30px_rgba(201,162,75,0.15)]">
                
-               <div className="flex flex-col items-center space-y-2">
-                 <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">Voyage Time</span>
-                 <span className="text-3xl font-mono text-gold">{finalTimeStr}</span>
-               </div>
-
-               <div className="flex flex-col items-center space-y-2 border-y md:border-y-0 md:border-x border-gold/20 py-4 md:py-0">
-                 <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">The Gods Laughed</span>
-                 <span className="text-3xl font-mono text-danger">{activeProgress.incorrect_count} <span className="text-sm">times</span></span>
-               </div>
-
-               <div className="flex flex-col items-center space-y-2">
-                 <span className="text-parchment/50 font-serif tracking-widest uppercase text-sm">Leaderboard Rank</span>
-                 <span className="text-4xl font-serif font-bold text-gold">#{rank}</span>
+               <div className="flex flex-col items-center space-y-3">
+                 <span className="text-parchment/60 font-serif tracking-widest uppercase text-sm border-b border-gold/20 pb-2 w-full text-center">Total Voyage Time</span>
+                 <span className="text-4xl font-mono text-gold font-bold tracking-wider">{finalTimeStr}</span>
                </div>
 
              </div>
