@@ -232,26 +232,20 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   // Phase 4 Final Submit
   const handleFinalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const oracleForm = document.getElementById('oracle-form') as HTMLFormElement;
-    const input = oracleForm?.querySelector('input[name="answer"]') as HTMLInputElement;
-    
-    // Set up React's artificial setter properly
+    const input = document.getElementById('oracle-form')?.querySelector('input[name="answer"]') as HTMLInputElement;
     if (input) {
       const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
       const finalWord = finalAnswer.trim() || "VICTORY";
-      if (nativeInputValueSetter) {
-        nativeInputValueSetter.call(input, finalWord);
-      } else {
-        input.value = finalWord;
+      nativeInputValueSetter?.call(input, finalWord);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const form = document.getElementById('oracle-form') as HTMLFormElement;
+      if (form) {
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        }
       }
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    
-    if (oracleForm && typeof oracleForm.requestSubmit === "function") {
-      oracleForm.requestSubmit();
-    } else if (oracleForm) {
-      (oracleForm as any).submit();
     }
   };
 
@@ -968,14 +962,14 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
               type="text" 
               value={finalAnswer}
               onChange={e => setFinalAnswer(e.target.value)}
-              placeholder="Enter final answer (ITHACA)..."
+              placeholder="Enter final answer (VICTORY)..."
               className="w-full bg-ink/90 border-2 border-gold px-4 py-3 rounded-xl text-gold font-serif text-center text-xl font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(201,162,75,0.4)] outline-none"
             />
             <button 
               type="submit" 
               className="w-full py-3.5 bg-gold hover:bg-gold-light text-ink font-serif text-base tracking-widest uppercase font-bold rounded-xl shadow-xl transition-all duration-200 hover:scale-102"
             >
-              Submit Answer: ITHACA →
+              Submit Answer →
             </button>
           </form>
         </div>
