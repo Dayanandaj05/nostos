@@ -144,6 +144,8 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       isCorrect = true;
     } else if (level.correct_answer === "0" && (normSubmitted === "0" || normSubmitted === "zero" || normSubmitted === "none")) {
       isCorrect = true;
+    } else if (currentLevel === 10 && normSubmitted === "victory") {
+      isCorrect = true;
     }
   }
 
