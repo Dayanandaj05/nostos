@@ -197,27 +197,28 @@ function ReadinessGate({ levelNumber, onReady }: { levelNumber: number, onReady:
   );
 }
 
-function CompletionGate({ levelNumber }: { levelNumber: number }) {
-  const { connectedMembers, doneMembers, activeMemberNames, deviceAlias, markDone } = useTeamSync();
+function CompletionGate({ levelNumber, activeCrew }: { levelNumber: number, activeCrew: string[] }) {
+  const { connectedMembers, doneMembers, deviceAlias, markDone } = useTeamSync();
   const [isPending, startTransition] = useTransition();
-
-  const [advanced, setAdvanced] = useState(false);
-
-  const registeredCrew = activeMemberNames.length > 0 ? activeMemberNames : connectedMembers.map(m => m.alias);
-
-  const doneCount = doneMembers.filter(m => m.isDone).length;
-  const totalCount = Math.max(registeredCrew.length, connectedMembers.length, 1);
+  const [advanceCalled, setAdvanceCalled] = useState(false);
 
   // Mark myself done immediately on mount
   React.useEffect(() => {
     markDone(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Advance immediately — the DB race-condition guard in confirmAdvance prevents double-advances.
-  // All other devices receive the postgres_changes event and router.refresh() automatically.
+  // Use activeCrew if available, otherwise fall back to connected members
+  const crewList = activeCrew.length > 0 ? activeCrew : connectedMembers.map(m => m.alias);
+
+  // Everyone is done when every active crew member has isDone=true in presence
+  const isEveryoneDone = crewList.length > 0 && crewList.every(name =>
+    doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
+  );
+
+  // Call confirmAdvance exactly once when all crew are done
   React.useEffect(() => {
-    if (advanced || isPending) return;
-    setAdvanced(true);
+    if (!isEveryoneDone || advanceCalled || isPending) return;
+    setAdvanceCalled(true);
     startTransition(async () => {
       try {
         await confirmAdvance(levelNumber);
@@ -225,22 +226,26 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
         console.error(e);
       }
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isEveryoneDone, advanceCalled, isPending, levelNumber]);
+
+  const doneCount = crewList.filter(name =>
+    doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone)
+  ).length;
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 relative z-10 text-center">
       <Anchor className="w-16 h-16 text-gold mx-auto opacity-80" />
       <h2 className="text-3xl font-serif text-gold tracking-widest uppercase">The Trial is Bested</h2>
       <p className="text-parchment/70 font-serif text-lg italic max-w-lg mx-auto">
-        Your answer was true. Advancing the crew to the next trial...
+        Your answer was true. Wait for your crew to finish before setting sail.
       </p>
 
       <Card className="bg-ink/80 border border-gold/30 p-6 backdrop-blur-md">
         <h3 className="text-xs uppercase tracking-widest text-parchment/50 font-bold mb-4 border-b border-gold/10 pb-2">
-          Crew Completion Status ({doneCount} / {totalCount} Finished)
+          Crew Completion Status ({doneCount} / {crewList.length} Finished)
         </h3>
         <ul className="space-y-4">
-          {registeredCrew.map((name: string) => {
+          {crewList.map((name: string) => {
             const isDone = doneMembers.some(m => m.alias.toLowerCase() === name.toLowerCase() && m.isDone);
             const isYou = name.toLowerCase() === deviceAlias.toLowerCase();
             return (
@@ -260,7 +265,7 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
       </Card>
 
       <p className="text-gold/80 font-serif italic animate-pulse text-lg">
-        {isPending ? "Setting sail..." : "Waiting for all crew devices to sync..."}
+        {isEveryoneDone ? "Setting sail..." : "Waiting for the rest of the crew..."}
       </p>
     </div>
   );
@@ -269,7 +274,7 @@ function CompletionGate({ levelNumber }: { levelNumber: number }) {
 function GameEngineInner({ level, progress, teamId, username, memberNames, absentMembers }: GameEngineProps) {
   const [state, formAction, isPendingForm] = useActionState<SubmitState, FormData>(submitAnswer, { success: false });
   const formRef = useRef<HTMLFormElement>(null);
-  const { connectedMembers, readyMembers, markReady } = useTeamSync();
+  const { connectedMembers, readyMembers, markReady, activeMemberNames } = useTeamSync();
 
   // Allow puzzle components to trigger form submission programmatically
   React.useEffect(() => {
@@ -316,7 +321,7 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
   if (isSolved) {
     return (
       <div className="w-full">
-        <CompletionGate levelNumber={level.level_number} />
+        <CompletionGate levelNumber={level.level_number} activeCrew={activeMemberNames.length > 0 ? activeMemberNames : connectedMembers.map(m => m.alias)} />
       </div>
     );
   }

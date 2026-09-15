@@ -51,7 +51,13 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
   const [deviceAlias, setDeviceAlias] = useState<string>("");
   const [myState, setMyState] = useState({ isReady: false, isDone: false });
   const channelRef = useRef<any>(null);
+  const levelNumberRef = useRef<number | undefined>(levelNumber);
   const router = useRouter();
+
+  // Keep levelNumberRef current so the postgres_changes callback always sees the latest value
+  useEffect(() => {
+    levelNumberRef.current = levelNumber;
+  }, [levelNumber]);
 
   // Periodic heartbeat to keep session active, detect displacement, and auto-sync level
   useEffect(() => {
@@ -139,7 +145,9 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
         }
       });
 
-    // Listen to database changes for progress sync
+    // Listen to database changes for progress sync — only refresh if the level
+    // actually changed (i.e. confirmAdvance was called by the CompletionGate after
+    // all crew finished). The heartbeat also handles this every 4s as a fallback.
     const progressChannel = supabase.channel(`progress_sync_${teamId}`)
       .on(
         'postgres_changes',
@@ -149,12 +157,15 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
           table: 'progress',
           filter: `team_id=eq.${teamId}`
         },
-        () => {
-          // Whenever the database updates (e.g. pending_advance toggled, or level changed)
-          if (document.body.classList.contains('transitioning-level')) return;
-          document.body.classList.add('transitioning-level');
-          router.refresh();
-          setTimeout(() => document.body.classList.remove('transitioning-level'), 4000);
+        (payload: any) => {
+          // Only refresh if current_level actually changed in the DB update
+          const newLevel = payload?.new?.current_level;
+          if (newLevel !== undefined && newLevel !== levelNumberRef.current) {
+            if (document.body.classList.contains('transitioning-level')) return;
+            document.body.classList.add('transitioning-level');
+            router.refresh();
+            setTimeout(() => document.body.classList.remove('transitioning-level'), 4000);
+          }
         }
       )
       .subscribe();
