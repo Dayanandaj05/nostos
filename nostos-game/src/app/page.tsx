@@ -5,7 +5,6 @@ import Link from "next/link";
 import gsap from "gsap";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { CountdownTimer } from "@/components/ui/CountdownTimer";
 import { OceanCanvas } from "@/components/ui/OceanCanvas";
 import { GreekShip } from "@/components/ui/GreekShip";
 
@@ -130,11 +129,6 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* 4. Live Countdown Timer */}
-          <div className="mt-20 w-full max-w-3xl mx-auto">
-            <p className="text-gold tracking-[0.3em] uppercase text-sm font-bold mb-8 drop-shadow-md">The Odyssey Begins In</p>
-            <CountdownTimer targetDate={targetDate} />
-          </div>
         </div>
       </section>
 
