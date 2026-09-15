@@ -246,11 +246,8 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   // Phase 4 Final Submit
   const handleFinalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const input = document.getElementById('oracle-form')?.querySelector('input[name="answer"]') as HTMLInputElement;
-    if (input) {
-      input.value = finalAnswer.trim() || "VICTORY";
-      document.getElementById('oracle-submit-btn')?.click();
-    }
+    const finalAns = finalAnswer.trim() || "VICTORY";
+    window.dispatchEvent(new CustomEvent("nostos-oracle-submit", { detail: finalAns }));
   };
 
   // Pre-allocated axe X positions to avoid allocations per frame
