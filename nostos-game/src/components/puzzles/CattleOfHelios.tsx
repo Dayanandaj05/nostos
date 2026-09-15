@@ -46,7 +46,7 @@ export function CattleOfHelios({ data, incorrectCount }: CattleOfHeliosProps) {
       const oracleInput = oracleForm.querySelector('input[name="answer"]') as HTMLInputElement;
       if (oracleInput) {
         oracleInput.value = "DECOY_TRIGGERED";
-        oracleForm.requestSubmit();
+        document.getElementById('oracle-submit-btn')?.click();
         // Clear it back
         setTimeout(() => { oracleInput.value = realAnswer; }, 100);
       }

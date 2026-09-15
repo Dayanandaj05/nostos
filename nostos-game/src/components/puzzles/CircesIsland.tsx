@@ -574,7 +574,7 @@ export function CircesIsland({ data, incorrectCount }: CircesIslandProps) {
                 if (form) {
                   const input = form.querySelector('input[name="answer"]') as HTMLInputElement;
                   if (input) input.value = "MOLY";
-                  if (typeof form.requestSubmit === "function") form.requestSubmit();
+                  document.getElementById('oracle-submit-btn')?.click();
                 }
               }}
               className="w-full py-3.5 bg-gold hover:bg-gold-light text-ink font-serif text-lg font-bold uppercase tracking-widest rounded-xl shadow-xl transition-all hover:scale-105"

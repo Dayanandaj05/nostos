@@ -434,7 +434,7 @@ function GameEngineInner({ level, progress, teamId, username, memberNames, absen
           </div>
 
           {level.puzzle_type === "progress_bar" || level.puzzle_type === "animated_fork" || level.puzzle_type === "visual_escape" || level.puzzle_type === "hidden_object" || level.puzzle_type === "timing_bar" || level.puzzle_type === "audio_visual" ? (
-            <form id="oracle-form" ref={formRef} action={formAction} className="hidden">
+            <form id="oracle-form" ref={formRef} action={formAction} className="sr-only">
               <input name="answer" type="hidden" />
               <button id="oracle-submit-btn" type="submit" />
             </form>

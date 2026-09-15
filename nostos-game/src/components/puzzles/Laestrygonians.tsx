@@ -185,7 +185,7 @@ export function Laestrygonians({ data, incorrectCount }: LaestrygoniansProps) {
         input.value = "6_CORRECT";
         // Auto submit after a short delay to let them see the victory state
         setTimeout(() => {
-          form.requestSubmit();
+          document.getElementById('oracle-submit-btn')?.click();
         }, 1800);
       }
     }

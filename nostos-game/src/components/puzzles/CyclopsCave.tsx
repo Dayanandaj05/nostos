@@ -43,10 +43,9 @@ export function CyclopsCave({ data, incorrectCount }: CyclopsCaveProps) {
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.dispatchEvent(new Event("change", { bubbles: true }));
         }
-        if (typeof parentForm.requestSubmit === "function") {
-          parentForm.requestSubmit();
-        } else if (typeof (parentForm as any).submit === "function") {
-          (parentForm as any).submit();
+        const submitBtn = document.getElementById('oracle-submit-btn');
+        if (submitBtn) {
+          submitBtn.click();
         }
       }
     }, 1400);

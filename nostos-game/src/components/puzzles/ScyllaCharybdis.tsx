@@ -58,7 +58,7 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
         const oracleInput = oracleForm.querySelector('input[name="answer"]') as HTMLInputElement;
         if (oracleInput) {
           oracleInput.value = "DEPENDS_ON_PATH";
-          oracleForm.requestSubmit();
+          document.getElementById('oracle-submit-btn')?.click();
         }
       }
     } else {
@@ -72,7 +72,7 @@ export function ScyllaCharybdis({ levelId, data, incorrectCount }: ScyllaCharybd
         const oracleInput = oracleForm.querySelector('input[name="answer"]') as HTMLInputElement;
         if (oracleInput) {
           oracleInput.value = "WRONG_PATH_ANSWER";
-          oracleForm.requestSubmit();
+          document.getElementById('oracle-submit-btn')?.click();
         }
       }
     }

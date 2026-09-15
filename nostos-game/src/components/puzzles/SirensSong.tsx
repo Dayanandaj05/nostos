@@ -475,7 +475,7 @@ export function SirensSong({ levelId, storyText, children }: SirensSongProps) {
                     if (form) {
                       const input = form.querySelector('input[name="answer"]') as HTMLInputElement;
                       if (input) input.value = tray.join(" ");
-                      if (typeof form.requestSubmit === "function") form.requestSubmit();
+                      document.getElementById('oracle-submit-btn')?.click();
                     }
                   }}
                   className="w-full py-3 bg-gold hover:bg-gold-light text-ink font-serif text-sm font-bold uppercase tracking-widest rounded-xl shadow-xl transition-all hover:scale-102 flex items-center justify-center space-x-2"
