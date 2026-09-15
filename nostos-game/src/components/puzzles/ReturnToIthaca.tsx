@@ -120,7 +120,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
       setHitFeedback("PERFECT! 3 Bullseyes! Reclaiming Ithaca...");
       const timer = setTimeout(() => {
         setPhase(4);
-        setFinalAnswer("ITHACA");
+        setFinalAnswer("VICTORY");
       }, 1000);
       return () => clearTimeout(timer);
     }
