@@ -29,50 +29,31 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
     let isMounted = true;
 
     async function initVariant() {
-      // 1. Get or create a device token in sessionStorage
-      let token = sessionStorage.getItem("nostos_device_token");
-      if (!token) {
-        token = crypto.randomUUID();
-        sessionStorage.setItem("nostos_device_token", token);
-      }
-
       const activeSize = Math.max(2, memberNames?.length || 2);
       const baseVariantsList = data.variants && data.variants.length > 0 ? data.variants : ["OPEN", "THE", "DOOR", "NOW"];
       const variantsList = baseVariantsList.slice(0, activeSize);
 
-      // 2. Check cached variant in sessionStorage for instant 0ms load
-      const cached = sessionStorage.getItem(`nostos_variant_${levelId}`);
-      if (cached && variantsList.includes(cached)) {
-        if (isMounted) {
-          setVariant(cached);
-          setLoading(false);
+      // Deterministic assignment based on their index in the crew roster!
+      // This completely eliminates database race conditions and guarantees unique words.
+      let memberIndex = memberNames?.findIndex(name => name.toLowerCase() === (deviceAlias || "").toLowerCase()) ?? -1;
+      
+      // Fallback if they aren't in the list for some reason
+      if (memberIndex === -1) {
+        let token = sessionStorage.getItem("nostos_device_token");
+        if (!token) {
+          token = crypto.randomUUID();
+          sessionStorage.setItem("nostos_device_token", token);
         }
-        return;
+        let hash = 0;
+        for (let i = 0; i < token.length; i++) hash = (hash << 5) - hash + token.charCodeAt(i);
+        memberIndex = Math.abs(hash);
       }
 
-      // 3. Instant deterministic fallback based on token hash (< 5ms load time)
-      let hash = 0;
-      for (let i = 0; i < token.length; i++) hash = (hash << 5) - hash + token.charCodeAt(i);
-      const instantFallback = variantsList[Math.abs(hash) % variantsList.length];
+      const assignedVariant = variantsList[memberIndex % variantsList.length];
 
       if (isMounted) {
-        setVariant(instantFallback);
+        setVariant(assignedVariant);
         setLoading(false);
-      }
-
-      // 4. Background fetch server assignment if available
-      try {
-        const result = await Promise.race([
-          getVariant(levelId, token, variantsList),
-          new Promise<null>(resolve => setTimeout(() => resolve(null), 2500))
-        ]);
-
-        if (result && result.variant_key && isMounted) {
-          setVariant(result.variant_key);
-          sessionStorage.setItem(`nostos_variant_${levelId}`, result.variant_key);
-        }
-      } catch {
-        // Silently use instant fallback
       }
     }
 
@@ -81,7 +62,7 @@ export function LandOfTheDead({ levelId, data, incorrectCount }: LandOfTheDeadPr
     return () => {
       isMounted = false;
     };
-  }, [levelId, data.variants]);
+  }, [levelId, data.variants, memberNames, deviceAlias]);
 
   const broadcastFragment = () => {
     if (!variant) return;
