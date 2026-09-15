@@ -91,8 +91,7 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
     const alias = username;
     setDeviceAlias(alias);
 
-    // Reset local state for fresh level mount
-    setMyState({ isReady: false, isDone: false });
+    // Reset is handled by a separate useEffect watching levelNumber
 
     const channel = supabase.channel(`crew_chat_${teamId}`, {
       config: {
@@ -201,6 +200,11 @@ export function TeamSyncProvider({ teamId, username, memberNames = [], levelNumb
       }
     }
   }, [myState, deviceAlias, deviceToken]);
+
+  // Reset local state whenever the level changes
+  useEffect(() => {
+    setMyState({ isReady: false, isDone: false });
+  }, [levelNumber]);
 
   const markReady = (ready: boolean) => {
     setMyState(prev => ({ ...prev, isReady: ready }));

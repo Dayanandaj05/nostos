@@ -176,8 +176,6 @@ export async function submitAnswer(prevState: SubmitState, formData: FormData): 
       if (isCompleted) {
         updateData.completed_at = new Date().toISOString();
         updateData.current_level = 11; // Instantly push to Victory Screen
-      } else {
-        updateData.current_level = currentLevel + 1; // Instantly advance the entire team
       }
 
       const tUpStart = Date.now();
