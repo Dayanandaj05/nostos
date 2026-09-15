@@ -74,6 +74,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
   const mousePosRef = useRef<{ x: number; y: number }>({ x: 130, y: 270 });
   const [arrowState, setArrowState] = useState<'idle' | 'flying' | 'hit' | 'miss'>('idle');
   const [hitCount, setHitCount] = useState(0); // Requires 3 hits to win!
+  const [missCount, setMissCount] = useState(0); // Track misses to unlock torch trick
   const [hitFeedback, setHitFeedback] = useState<string | null>(null);
   const [finalAnswer, setFinalAnswer] = useState("");
 
@@ -623,7 +624,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
 
         const distToTarget = Math.hypot(p.x - targetX, p.y - targetY);
 
-        if (distToTarget <= 42) {
+        if (distToTarget <= 24) { // Only white ring (24) or bullseye (11)
           setArrowState('hit');
           setHitCount(prev => prev + 1);
           setHitFeedback(`BULLSEYE! Shot ${currentHitCount + 1} of 3 successful!`);
@@ -635,6 +636,7 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
 
         } else if (p.x > 870 || p.y > 400 || p.y < -50) {
           setArrowState('miss');
+          setMissCount(prev => prev + 1);
           setHitFeedback("Missed target! Reloading arrow...");
           
           setTimeout(() => {
@@ -664,14 +666,17 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
     
-    // Check for torch clicks
-    if (torch1Lit && Math.hypot(x - 60, y - 180) < 40) {
-      setTorch1Lit(false);
-      return;
-    }
-    if (torch2Lit && Math.hypot(x - 840, y - 180) < 40) {
-      setTorch2Lit(false);
-      return;
+    // Check for torch clicks (only allowed if they've struggled for 60s or missed 3 times)
+    const canUseTrick = showHint || timeInPhase > 60 || missCount >= 3;
+    if (canUseTrick) {
+      if (torch1Lit && Math.hypot(x - 60, y - 180) < 40) {
+        setTorch1Lit(false);
+        return;
+      }
+      if (torch2Lit && Math.hypot(x - 840, y - 180) < 40) {
+        setTorch2Lit(false);
+        return;
+      }
     }
 
     setMousePos({ x, y });
@@ -689,14 +694,17 @@ export function ReturnToIthaca({ data, storyText }: ReturnToIthacaProps) {
     const x = (touch.clientX - rect.left) * scaleX;
     const y = (touch.clientY - rect.top) * scaleY;
 
-    // Check for torch clicks
-    if (torch1Lit && Math.hypot(x - 60, y - 180) < 40) {
-      setTorch1Lit(false);
-      return;
-    }
-    if (torch2Lit && Math.hypot(x - 840, y - 180) < 40) {
-      setTorch2Lit(false);
-      return;
+    // Check for torch clicks (only allowed if they've struggled for 60s or missed 3 times)
+    const canUseTrick = showHint || timeInPhase > 60 || missCount >= 3;
+    if (canUseTrick) {
+      if (torch1Lit && Math.hypot(x - 60, y - 180) < 40) {
+        setTorch1Lit(false);
+        return;
+      }
+      if (torch2Lit && Math.hypot(x - 840, y - 180) < 40) {
+        setTorch2Lit(false);
+        return;
+      }
     }
 
     setMousePos({ x, y });
