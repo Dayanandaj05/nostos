@@ -83,15 +83,32 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
       return (a.incorrect_count || 0) - (b.incorrect_count || 0);
     });
 
-    const headers = ["Rank", "Ship Name", "Current Level", "Correct Answers", "Incorrect Answers", "Completed At"];
-    const rows = sorted.map((t, idx) => [
-      idx + 1,
-      t.teams.ship_name,
-      t.current_level > 10 ? "FINISHED" : t.current_level,
-      t.correct_count || 0,
-      t.incorrect_count || 0,
-      t.completed_at ? new Date(t.completed_at).toLocaleString() : "N/A"
-    ]);
+    const headers = [
+      "Rank", "Ship Name", "Current Level", "Correct Answers", "Incorrect Answers", "Run Time", "Completed At",
+      "Member 1", "Phone 1", "Member 2", "Phone 2", "Member 3", "Phone 3", "Member 4", "Phone 4"
+    ];
+    
+    const rows = sorted.map((t, idx) => {
+      const runTimeMs = new Date(t.completed_at || t.last_updated_at || 0).getTime() - new Date(t.first_login_at || 0).getTime();
+      const runTimeStr = t.first_login_at ? `${Math.floor(runTimeMs / 60000)}m ${Math.floor((runTimeMs % 60000) / 1000)}s` : "N/A";
+      
+      const mNames = t.teams.member_names || [];
+      const mPhones = t.teams.member_phones || [];
+
+      return [
+        idx + 1,
+        `"${t.teams.ship_name}"`,
+        t.current_level > 10 ? "FINISHED" : t.current_level,
+        t.correct_count || 0,
+        t.incorrect_count || 0,
+        runTimeStr,
+        t.completed_at ? new Date(t.completed_at).toLocaleString() : "N/A",
+        `"${mNames[0] || ''}"`, `"${mPhones[0] || ''}"`,
+        `"${mNames[1] || ''}"`, `"${mPhones[1] || ''}"`,
+        `"${mNames[2] || ''}"`, `"${mPhones[2] || ''}"`,
+        `"${mNames[3] || ''}"`, `"${mPhones[3] || ''}"`
+      ];
+    });
 
     const csvContent = "data:text/csv;charset=utf-8," 
       + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
