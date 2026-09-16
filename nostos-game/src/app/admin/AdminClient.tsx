@@ -102,7 +102,7 @@ export function AdminClient({ teams: initialTeams, logs: initialLogs, currentUse
         t.correct_count || 0,
         t.incorrect_count || 0,
         runTimeStr,
-        t.completed_at ? new Date(t.completed_at).toLocaleString() : "N/A",
+        `"${t.completed_at ? new Date(t.completed_at).toLocaleString() : "N/A"}"`,
         `"${mNames[0] || ''}"`, `"${mPhones[0] || ''}"`,
         `"${mNames[1] || ''}"`, `"${mPhones[1] || ''}"`,
         `"${mNames[2] || ''}"`, `"${mPhones[2] || ''}"`,

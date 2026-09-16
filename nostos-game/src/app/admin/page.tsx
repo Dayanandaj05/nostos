@@ -17,7 +17,7 @@ export default async function AdminPage() {
   // Fetch all necessary data
   const { data: rawTeams, error: teamsError } = await supabase
     .from("teams")
-    .select("id, ship_name, captain_name, captain_phone, progress(current_level, incorrect_count, correct_count, first_login_at, last_updated_at, completed_at)");
+    .select("id, ship_name, captain_name, captain_phone, member_names, member_phones, progress(current_level, incorrect_count, correct_count, first_login_at, last_updated_at, completed_at)");
 
   if (teamsError) {
     console.error("Supabase Error fetching teams in Admin:", teamsError);
@@ -37,7 +37,9 @@ export default async function AdminPage() {
       teams: {
         ship_name: t.ship_name,
         captain_name: t.captain_name,
-        captain_phone: t.captain_phone
+        captain_phone: t.captain_phone,
+        member_names: t.member_names || [],
+        member_phones: t.member_phones || []
       }
     };
   }).sort((a, b) => b.current_level - a.current_level);
